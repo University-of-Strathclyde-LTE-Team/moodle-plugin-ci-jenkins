@@ -1,6 +1,9 @@
 def call(Map pipelineParams) {
 
-    echo "PHP: ${pipelineParams.php}"
-    echo "Database: ${pipelineParams.db}"
+    def php = pipelineParams.php ?: '7.2'
+    def db = pipelineParams.db ?: 'mysql'
+
+    echo "PHP: ${php}"
+    echo "Database: ${db}"
 
 }
