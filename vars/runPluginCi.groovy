@@ -6,5 +6,6 @@ def call(Map pipelineParams) {
 
     echo "PHP: ${php}"
     echo "Database: ${db}"
+    echo "Commands: ${commands}"
 
 }
