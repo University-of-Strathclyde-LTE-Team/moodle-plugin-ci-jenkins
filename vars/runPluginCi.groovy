@@ -10,7 +10,10 @@ def call(Map pipelineParams = [:]) {
     def dockerFile = "${WORKSPACE}/${BUILD_TAG}.Dockerfile";
     writeFile(file: dockerFile, text: dockerFileContents)
 
-    def image = docker.build("${BUILD_TAG}", "-f ${dockerFile} .")
+    // Docker does not like upper case letters in tags.
+    def buildTag = "${BUILD_TAG}".toLowerCase()
+
+    def image = docker.build(buildTag, "-f ${dockerFile} .")
 
     image.inside() {
         sh '''
@@ -38,7 +41,7 @@ def call(Map pipelineParams = [:]) {
     }
 
     new File(dockerFile).delete()
-    sh "docker rmi ${BUILD_TAG}"
+    sh "docker rmi ${buildTag}"
 
     cleanWs deleteDirs: true, notFailBuild: true, patterns: [
         [pattern: "${BUILD_NUMBER}", type: 'INCLUDE']
