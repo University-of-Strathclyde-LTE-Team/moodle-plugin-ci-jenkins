@@ -5,7 +5,6 @@ def call(Map pipelineParams = [:]) {
 
     echo "PHP: ${php}"
     echo "Database: ${db}"
-    echo "Commands: ${commands}"
 
     def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
     def dockerFile = "${WORKSPACE}/${BUILD_TAG}.Dockerfile";
