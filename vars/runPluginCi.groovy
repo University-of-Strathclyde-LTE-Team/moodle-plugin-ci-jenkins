@@ -12,6 +12,17 @@ def call(Map pipelineParams) {
     def dockerFile = "${WORKSPACE}/${BUILD_TAG}.Dockerfile";
     writeFile(file: dockerFile, text: dockerFileContents)
 
-    docker.build("${BUILD_TAG}", "-f ${dockerFile} .")
+    def image = docker.build("${BUILD_TAG}", "-f ${dockerFile} .")
+
+    image.inside() {
+        sh '''
+            sudo service mysql start
+
+            mkdir ${BUILD_NUMBER} && cd ${BUILD_NUMBER}
+
+            composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3
+            PATH="$PWD/ci/bin:$PATH"
+            '''
+    }
 
 }
