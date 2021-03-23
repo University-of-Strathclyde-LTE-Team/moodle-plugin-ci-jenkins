@@ -27,7 +27,7 @@ def call(Map pipelineParams, Closure body) {
                 sudo service mysql start
 
                 composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3
-                PATH="$PWD/ci/bin:$PATH"
+                export PATH="$PWD/ci/bin:$PATH"
                 '''
 
             if (install) {
