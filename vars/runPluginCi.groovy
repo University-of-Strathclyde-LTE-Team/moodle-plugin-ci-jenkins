@@ -25,4 +25,6 @@ def call(Map pipelineParams) {
             '''
     }
 
+    sh "docker rmi ${BUILD_TAG}"
+
 }
