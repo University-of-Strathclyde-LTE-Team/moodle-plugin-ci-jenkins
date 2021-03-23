@@ -24,7 +24,7 @@ def call(Map pipelineParams = [:]) {
             composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3
             PATH="$PWD/ci/bin:$PATH"
 
-            moodle-plugin-ci install --db-user jenkins --db-pass jenkins \
+            moodle-plugin-ci install --db-type mysqli --db-user jenkins --db-pass jenkins \
                                        --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
 
             moodle-plugin-ci phplint
@@ -40,6 +40,7 @@ def call(Map pipelineParams = [:]) {
             '''
     }
 
+    // TODO: Cleanup stuff should be in a finally block probably.
     new File(dockerFile).delete()
     sh "docker rmi ${buildTag}"
 
