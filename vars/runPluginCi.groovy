@@ -25,7 +25,7 @@ def call(Map pipelineParams = [:]) {
             PATH="$PWD/ci/bin:$PATH"
 
             moodle-plugin-ci install --db-user jenkins --db-pass jenkins \
-                                        --plugin ${WORKSPACE}/plugin
+                                       --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
 
             moodle-plugin-ci phplint
             moodle-plugin-ci phpcpd
