@@ -41,4 +41,8 @@ def call(Map pipelineParams) {
     new File(dockerFile).delete()
     sh "docker rmi ${BUILD_TAG}"
 
+    cleanWs deleteDirs: true, notFailBuild: true, patterns: [
+        [pattern: "${BUILD_NUMBER}", type: 'INCLUDE']
+    ]
+
 }
