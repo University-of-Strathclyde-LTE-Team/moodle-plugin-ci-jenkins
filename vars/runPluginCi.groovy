@@ -8,8 +8,10 @@ def call(Map pipelineParams) {
     echo "Database: ${db}"
     echo "Commands: ${commands}"
 
-    def dockerfileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
+    def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
+    def dockerFile = "${WORKSPACE}/${BUILD_TAG}.Dockerfile";
+    writeFile(file: dockerFile, text: dockerFileContents)
 
-    writeFile(file: "${WORKSPACE}/test.docker", text: dockerfileContents)
+    docker.build("${BUILD_TAG}", "-f ${dockerFile} .")
 
 }
