@@ -10,6 +10,6 @@ def call(Map pipelineParams) {
 
     def dockerfileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
 
-    echo dockerfileContents
+    writeFile(file: "${WORKSPACE}/test.docker", text: dockerfileContents)
 
 }
