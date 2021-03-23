@@ -8,4 +8,8 @@ def call(Map pipelineParams) {
     echo "Database: ${db}"
     echo "Commands: ${commands}"
 
+    def dockerfileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
+
+    echo dockerfileContents
+
 }
