@@ -24,7 +24,7 @@ def call(Map pipelineParams = [:]) {
             composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3
             PATH="$PWD/ci/bin:$PATH"
 
-            moodle-plugin-ci install --db-user ${DBUSER} --db-pass ${DBPASS} \
+            moodle-plugin-ci install --db-user jenkins --db-pass jenkins \
                                         --plugin ${WORKSPACE}/plugin
 
             moodle-plugin-ci phplint
