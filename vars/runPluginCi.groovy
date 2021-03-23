@@ -1,44 +1,41 @@
-def call(Map pipelineParams, Closure body) {
+def call(Map pipelineParams) {
 
     def php = pipelineParams.php ?: '7.2'
     def db = pipelineParams.db ?: 'mysql'
-    def install = pipelineParams.install
-
-    if (install == null) {
-        install = true
-    }
 
     echo "PHP: ${php}"
     echo "Database: ${db}"
+    echo "Commands: ${commands}"
 
     def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
     def dockerFile = "${WORKSPACE}/${BUILD_TAG}.Dockerfile";
-    sh 'env > ${WORKSPACE}/${BUILD_TAG}.env'
-
     writeFile(file: dockerFile, text: dockerFileContents)
 
     def image = docker.build("${BUILD_TAG}", "-f ${dockerFile} .")
 
     image.inside() {
+        sh '''
+            sudo service mysql start
 
-        withEnv(["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/composer-cache"]) {
+            mkdir ${BUILD_NUMBER} && cd ${BUILD_NUMBER}
 
-            sh '''
-                sudo service mysql start
+            composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3
+            PATH="$PWD/ci/bin:$PATH"
 
-                composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3
-                export PATH="$PWD/ci/bin:$PATH"
-                '''
+            moodle-plugin-ci install --db-user ${DBUSER} --db-pass ${DBPASS} \
+                                        --plugin ${WORKSPACE}/plugin
 
-            if (install) {
-                sh 'moodle-plugin-ci install --db-user jenkins --db-pass jenkins \
-                    --plugin ${WORKSPACE}/plugin'
-            }
-
-            body()
-
-        }
-
+            moodle-plugin-ci phplint
+            moodle-plugin-ci phpcpd
+            moodle-plugin-ci phpmd
+            moodle-plugin-ci codechecker --max-warnings 0
+            moodle-plugin-ci phpdoc || true
+            moodle-plugin-ci validate || true
+            moodle-plugin-ci savepoints
+            moodle-plugin-ci mustache || true
+            # moodle-plugin-ci grunt --max-lint-warnings 0 || true
+            moodle-plugin-ci phpunit
+            '''
     }
 
     new File(dockerFile).delete()
