@@ -25,6 +25,7 @@ def call(Map pipelineParams) {
             '''
     }
 
+    new File(dockerFile).delete()
     sh "docker rmi ${BUILD_TAG}"
 
 }
