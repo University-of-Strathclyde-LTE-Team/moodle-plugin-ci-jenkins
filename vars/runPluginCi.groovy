@@ -34,7 +34,7 @@ def call(Map pipelineParams = [:]) {
             sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ${BUILD_NUMBER}/ci ^3'
         }
 
-        withEnv(["PATH+MOODLEPLUGINCI=${WORKSPACE}/${BUILD_NUMBER}/ci/bin"]) {
+        withEnv(["PATH=${WORKSPACE}/${BUILD_NUMBER}/ci/bin:$PATH"]) {
             sh 'env'
             sh '''
                 moodle-plugin-ci install --moodle ${BUILD_NUMBER}/moodle --db-type mysqli --db-user jenkins --db-pass jenkins \
