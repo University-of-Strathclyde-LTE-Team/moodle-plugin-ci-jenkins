@@ -1,8 +1,7 @@
 FROM ubuntu:20.10
 
 # Install some basics.
-RUN apt update && DEBIAN_FRONTEND="noninteractive" apt-get install -y php unzip libapache2-mod-php \
-    php-curl php-gd php-intl php-mbstring php-mysql php-xml php-zip \
+RUN apt update && DEBIAN_FRONTEND="noninteractive" apt-get install -y php unzip \
     curl git docker.io mysql-client mysql-server \
     locales
 
