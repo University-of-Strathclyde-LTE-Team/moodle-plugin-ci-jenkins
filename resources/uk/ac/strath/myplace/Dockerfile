@@ -6,6 +6,10 @@ RUN apt update && DEBIAN_FRONTEND="noninteractive" apt-get install -y php unzip 
     curl git docker.io mysql-client mysql-server \
     locales
 
+# For phpenv
+RUN echo deb-src http://archive.ubuntu.com/ubuntu/ groovy main restricted >> /etc/apt/sources.list
+RUN apt-get update && apt-get install -y libreadline-dev && apt-get build-dep -y php7.4
+
 # Create a real jenkins user. Jenkins launches containers with the user and group id of the jenkins user on the host.
 RUN mkdir /home/jenkins && groupadd -g 119 jenkins && groupmod -g 120 docker && useradd -r -u 113 -g jenkins jenkins \
     && chown jenkins:jenkins /home/jenkins
@@ -45,6 +49,8 @@ RUN mkdir $NVM_DIR \
     && chown jenkins:jenkins $NVM_DIR
 
 USER jenkins
+
+# Install NVM
 RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash \
     && . $NVM_DIR/nvm.sh \
     && nvm install $NODE_VERSION \
@@ -53,6 +59,15 @@ RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash 
 
 ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
+# Install phpenv
+RUN curl -L https://raw.githubusercontent.com/phpenv/phpenv-installer/master/bin/phpenv-installer | bash
+
+ENV PHPENV_ROOT="/home/jenkins/.phpenv"
+ENV PATH $PHPENV_ROOT/shims:$PHPENV_ROOT/bin:$PATH
+
+# RUN phpenv install 7.2.34 && phpenv install 7.3.27 && phpenv install 7.4.16 && phpenv install 8.0.3
+RUN phpenv install 7.4.16 && phpenv global 7.4
 
 # Install grunt CLI.
 RUN npm install -g grunt-cli
