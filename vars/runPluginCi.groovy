@@ -23,7 +23,12 @@ def call(Map pipelineParams = [:]) {
     sh 'mkdir -p ${WORKSPACE}/.npm && chmod 777 ${WORKSPACE}/.npm \
             && mkdir -p ${WORKSPACE}/.composer && chmod 777 ${WORKSPACE}/.composer'
 
-    image.inside() {
+    // Nasty hack to get around the fact that we can't use withEnv to change the PATH on a container
+    // (or any other method as far as I can see)
+    // https://issues.jenkins.io/browse/JENKINS-49076
+    def pathOnDocker = "${WORKSPACE}/${BUILD_NUMBER}/ci/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+    image.inside("-e PATH=${pathOnDocker}") {
         // Start database.
         sh 'sudo service mysql start'
 
@@ -34,27 +39,22 @@ def call(Map pipelineParams = [:]) {
             sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ${BUILD_NUMBER}/ci ^3'
         }
 
-        withEnv(["PATH=${WORKSPACE}/${BUILD_NUMBER}/ci/bin:$PATH"]) {
-            sh '''
+        sh '''
 
-                export PATH=${WORKSPACE}/${BUILD_NUMBER}/ci/bin:$PATH
+            moodle-plugin-ci install --moodle ${BUILD_NUMBER}/moodle --db-type mysqli --db-user jenkins --db-pass jenkins \
+                                       --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
 
-                moodle-plugin-ci install --moodle ${BUILD_NUMBER}/moodle --db-type mysqli --db-user jenkins --db-pass jenkins \
-                                           --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
-
-                moodle-plugin-ci phplint
-                moodle-plugin-ci phpcpd
-                moodle-plugin-ci phpmd
-                moodle-plugin-ci codechecker --max-warnings 0
-                moodle-plugin-ci phpdoc || true
-                moodle-plugin-ci validate || true
-                moodle-plugin-ci savepoints
-                moodle-plugin-ci mustache || true
-                # moodle-plugin-ci grunt --max-lint-warnings 0 || true
-                moodle-plugin-ci phpunit
-             '''
-        }
-
+            moodle-plugin-ci phplint
+            moodle-plugin-ci phpcpd
+            moodle-plugin-ci phpmd
+            moodle-plugin-ci codechecker --max-warnings 0
+            moodle-plugin-ci phpdoc || true
+            moodle-plugin-ci validate || true
+            moodle-plugin-ci savepoints
+            moodle-plugin-ci mustache || true
+            # moodle-plugin-ci grunt --max-lint-warnings 0 || true
+            moodle-plugin-ci phpunit
+         '''
 
     }
 
