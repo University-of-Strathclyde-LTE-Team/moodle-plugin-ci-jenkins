@@ -7,13 +7,16 @@ def call(Map pipelineParams = [:]) {
     echo "Database: ${db}"
 
     def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
-    def dockerFile = "${WORKSPACE}/${BUILD_TAG}.Dockerfile";
-    writeFile(file: dockerFile, text: dockerFileContents)
 
-    // Docker does not like upper case letters in tags.
-    def buildTag = "${BUILD_TAG}".toLowerCase()
+    // Create Dockerfile in its own directory to prevent unnecessary context being sent.
+    def dockerDir = "${WORKSPACE}/${BUILD_TAG}-docker";
+    dir(dockerDir) {
+        writeFile(file: 'Dockerfile', text: dockerFileContents)
+        // Docker does not like upper case letters in tags.
+        def buildTag = "${BUILD_TAG}".toLowerCase()
 
-    def image = docker.build(buildTag, "-f ${dockerFile} .")
+        def image = docker.build(buildTag)
+    }
 
     image.inside() {
         sh '''
