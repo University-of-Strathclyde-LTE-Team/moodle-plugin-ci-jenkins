@@ -19,7 +19,7 @@ def call(Map pipelineParams = [:]) {
         image = docker.build(buildTag)
     }
 
-    dir("{$BUILD_NUMBER}") {
+    dir("${BUILD_NUMBER}") {
         image.inside() {
             // Start database.
             sh 'sudo service mysql start'
@@ -29,8 +29,8 @@ def call(Map pipelineParams = [:]) {
                     && export PATH="$PWD/ci/bin:$PATH"'
 
             // Set composer and npm directories to allow caching of downloads between jobs.
-            sh 'export npm_config_cache = "${WORKSPACE}/.npm" \
-                    && export COMPOSER_CACHE_DIR = "${WORKSPACE}/.composer"'
+            sh 'export npm_config_cache="${WORKSPACE}/.npm" \
+                    && export COMPOSER_CACHE_DIR="${WORKSPACE}/.composer"'
 
             sh '''
                 moodle-plugin-ci install --db-type mysqli --db-user jenkins --db-pass jenkins \
