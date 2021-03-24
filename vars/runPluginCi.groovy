@@ -8,48 +8,55 @@ def call(Map pipelineParams = [:]) {
 
     def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
 
+    // Docker does not like upper case letters in tags.
+    def buildTag = "${BUILD_TAG}".toLowerCase()
+
     // Create Dockerfile in its own directory to prevent unnecessary context being sent.
-    def dockerDir = "${WORKSPACE}/${BUILD_TAG}-docker"
+    def dockerDir = "${BUILD_TAG}-docker"
     def image = null
     dir(dockerDir) {
         writeFile(file: 'Dockerfile', text: dockerFileContents)
-        // Docker does not like upper case letters in tags.
-        def buildTag = "${BUILD_TAG}".toLowerCase()
-
         image = docker.build(buildTag)
     }
 
-    image.inside() {
-        sh '''
-            sudo service mysql start
+    dir("{$BUILD_NUMBER}") {
+        image.inside() {
+            // Start database.
+            sh 'sudo service mysql start'
 
-            mkdir ${BUILD_NUMBER} && cd ${BUILD_NUMBER}
+            // Install plugin ci.
+            sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3 \
+                    && export PATH="$PWD/ci/bin:$PATH"'
 
-            composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3
-            PATH="$PWD/ci/bin:$PATH"
+            // Set composer and npm directories to allow caching of downloads between jobs.
+            sh 'export npm_config_cache = "${WORKSPACE}/.npm" \
+                    && export COMPOSER_CACHE_DIR = "${WORKSPACE}/.composer"'
 
-            moodle-plugin-ci install --db-type mysqli --db-user jenkins --db-pass jenkins \
-                                       --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
+            sh '''
+                moodle-plugin-ci install --db-type mysqli --db-user jenkins --db-pass jenkins \
+                                           --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
 
-            moodle-plugin-ci phplint
-            moodle-plugin-ci phpcpd
-            moodle-plugin-ci phpmd
-            moodle-plugin-ci codechecker --max-warnings 0
-            moodle-plugin-ci phpdoc || true
-            moodle-plugin-ci validate || true
-            moodle-plugin-ci savepoints
-            moodle-plugin-ci mustache || true
-            # moodle-plugin-ci grunt --max-lint-warnings 0 || true
-            moodle-plugin-ci phpunit
+                moodle-plugin-ci phplint
+                moodle-plugin-ci phpcpd
+                moodle-plugin-ci phpmd
+                moodle-plugin-ci codechecker --max-warnings 0
+                moodle-plugin-ci phpdoc || true
+                moodle-plugin-ci validate || true
+                moodle-plugin-ci savepoints
+                moodle-plugin-ci mustache || true
+                # moodle-plugin-ci grunt --max-lint-warnings 0 || true
+                moodle-plugin-ci phpunit
             '''
+        }
     }
 
+
     // TODO: Cleanup stuff should be in a finally block probably.
-    new File(dockerFile).delete()
     sh "docker rmi ${buildTag}"
 
     cleanWs deleteDirs: true, notFailBuild: true, patterns: [
-        [pattern: "${BUILD_NUMBER}", type: 'INCLUDE']
+        [pattern: "${BUILD_NUMBER}", type: 'INCLUDE'],
+        [pattern: "${dockerDir}", type: 'INCLUDE']
     ]
 
 }
