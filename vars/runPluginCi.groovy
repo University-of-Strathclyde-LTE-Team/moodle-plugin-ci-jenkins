@@ -20,7 +20,8 @@ def call(Map pipelineParams = [:]) {
     }
 
     // Create composer and npm cache directories if they don't exist.
-    sh 'mkdir -p ${WORKSPACE}/.npm && mkdir -p ${WORKSPACE}/.composer'
+    sh 'mkdir -p ${WORKSPACE}/.npm && chmod 777 ${WORKSPACE}/.npm \
+            && mkdir -p ${WORKSPACE}/.composer && chmod 777 ${WORKSPACE}/.composer'
 
     dir("${BUILD_NUMBER}") {
         image.inside() {
