@@ -25,28 +25,30 @@ def call(Map pipelineParams = [:]) {
             sh 'sudo service mysql start'
 
             // Set composer and npm directories to allow caching of downloads between jobs.
-            sh 'export npm_config_cache="${WORKSPACE}/.npm" \
-                    && export COMPOSER_CACHE_DIR="${WORKSPACE}/.composer"'
+            withEnv(["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/.composer"]) {
+                // Install plugin ci.
+                sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3'
+            }
 
-            // Install plugin ci.
-            sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3 \
-                    && export PATH="$PWD/ci/bin:$PATH"'
+            withEnv(["PATH+MOODLEPLUGINCI=$PWD/ci"]) {
+                sh '''
+                    moodle-plugin-ci install --db-type mysqli --db-user jenkins --db-pass jenkins \
+                                               --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
 
-            sh '''
-                moodle-plugin-ci install --db-type mysqli --db-user jenkins --db-pass jenkins \
-                                           --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
+                    moodle-plugin-ci phplint
+                    moodle-plugin-ci phpcpd
+                    moodle-plugin-ci phpmd
+                    moodle-plugin-ci codechecker --max-warnings 0
+                    moodle-plugin-ci phpdoc || true
+                    moodle-plugin-ci validate || true
+                    moodle-plugin-ci savepoints
+                    moodle-plugin-ci mustache || true
+                    # moodle-plugin-ci grunt --max-lint-warnings 0 || true
+                    moodle-plugin-ci phpunit
+                 '''
+            }
 
-                moodle-plugin-ci phplint
-                moodle-plugin-ci phpcpd
-                moodle-plugin-ci phpmd
-                moodle-plugin-ci codechecker --max-warnings 0
-                moodle-plugin-ci phpdoc || true
-                moodle-plugin-ci validate || true
-                moodle-plugin-ci savepoints
-                moodle-plugin-ci mustache || true
-                # moodle-plugin-ci grunt --max-lint-warnings 0 || true
-                moodle-plugin-ci phpunit
-            '''
+
         }
     }
 
