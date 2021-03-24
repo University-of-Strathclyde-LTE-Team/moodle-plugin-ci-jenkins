@@ -20,10 +20,9 @@ RUN mkdir -p /var/lib/mysql \
     && mysql -e "CREATE USER jenkins@localhost IDENTIFIED BY 'jenkins'" \
     && mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'jenkins'@'localhost'"
 
-# Allow jenkins user to start MySQL and Apache
+# Allow jenkins user to start MySQL
 RUN apt-get install sudo
-RUN echo "jenkins ALL= NOPASSWD: /usr/sbin/service mysql start" > /etc/sudoers.d/jenkins \
-    && echo "jenkins ALL= NOPASSWD: /usr/sbin/service apache2 start" >> /etc/sudoers.d/jenkins
+RUN echo "jenkins ALL= NOPASSWD: /usr/sbin/service mysql start" > /etc/sudoers.d/jenkins
 
 # Install composer.
 ENV COMPOSER_HOME /composer
@@ -65,8 +64,12 @@ RUN curl -L https://raw.githubusercontent.com/phpenv/phpenv-installer/master/bin
 ENV PHPENV_ROOT="/home/jenkins/.phpenv"
 ENV PATH $PHPENV_ROOT/shims:$PHPENV_ROOT/bin:$PATH
 
-# RUN phpenv install 7.2.34 && phpenv install 7.3.27 && phpenv install 7.4.16 && phpenv install 8.0.3
+# Keep these in separate layers so we can add new versions without having to wait for all the existing installs
+# to rebuild. Set 7.4 as default.
+RUN phpenv install 7.2.34
+RUN phpenv install 7.3.27
 RUN phpenv install 7.4.16 && phpenv global 7.4
+RUN phpenv install 8.0.3
 
 # Install grunt CLI.
 RUN npm install -g grunt-cli
