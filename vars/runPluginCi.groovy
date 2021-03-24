@@ -35,11 +35,12 @@ def call(Map pipelineParams = [:]) {
         }
 
         withEnv(["PATH=${WORKSPACE}/${BUILD_NUMBER}/ci/bin:$PATH"]) {
-            sh 'export PATH=/some/test/thing:$PATH'
-            sh 'env'
             sh '''
+
                 moodle-plugin-ci install --moodle ${BUILD_NUMBER}/moodle --db-type mysqli --db-user jenkins --db-pass jenkins \
                                            --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
+
+                export PATH=${WORKSPACE}/${BUILD_NUMBER}/ci/bin:$PATH
 
                 moodle-plugin-ci phplint
                 moodle-plugin-ci phpcpd
