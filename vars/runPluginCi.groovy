@@ -24,13 +24,13 @@ def call(Map pipelineParams = [:]) {
             // Start database.
             sh 'sudo service mysql start'
 
-            // Install plugin ci.
-            sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3 \
-                    && export PATH="$PWD/ci/bin:$PATH"'
-
             // Set composer and npm directories to allow caching of downloads between jobs.
             sh 'export npm_config_cache="${WORKSPACE}/.npm" \
                     && export COMPOSER_CACHE_DIR="${WORKSPACE}/.composer"'
+
+            // Install plugin ci.
+            sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3 \
+                    && export PATH="$PWD/ci/bin:$PATH"'
 
             sh '''
                 moodle-plugin-ci install --db-type mysqli --db-user jenkins --db-pass jenkins \
