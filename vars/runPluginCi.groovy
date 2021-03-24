@@ -35,6 +35,7 @@ def call(Map pipelineParams = [:]) {
         }
 
         withEnv(["PATH+MOODLEPLUGINCI=${WORKSPACE}/${BUILD_NUMBER}/ci/bin"]) {
+            sh 'env'
             sh '''
                 moodle-plugin-ci install --moodle ${BUILD_NUMBER}/moodle --db-type mysqli --db-user jenkins --db-pass jenkins \
                                            --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
