@@ -64,10 +64,10 @@ ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 RUN curl -L https://raw.githubusercontent.com/phpenv/phpenv-installer/master/bin/phpenv-installer | bash
 
 ENV PHPENV_ROOT="/home/jenkins/.phpenv"
-# ENV PATH $PHPENV_ROOT/shims:$PHPENV_ROOT/bin:$PATH
+ENV PATH $PHPENV_ROOT/shims:$PHPENV_ROOT/bin:$PATH
 
 # RUN phpenv install 7.2.34 && phpenv install 7.3.27 && phpenv install 7.4.16 && phpenv install 8.0.3
-# RUN phpenv install 7.4.16 && phpenv global 7.4
+RUN phpenv install 7.4.16 && phpenv global 7.4
 
 # Install grunt CLI.
 RUN npm install -g grunt-cli

@@ -26,9 +26,11 @@ def call(Map pipelineParams = [:]) {
     // Nasty hack to get around the fact that we can't use withEnv to change the PATH on a container
     // (or any other method as far as I can see)
     // https://issues.jenkins.io/browse/JENKINS-49076
-    def pathOnDocker = "${WORKSPACE}/${BUILD_NUMBER}/ci/bin:/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    def originalDockerPath = "/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    def pathOnDocker = "${WORKSPACE}/${BUILD_NUMBER}/ci/bin:${originalDockerPath}"
 
     image.inside("-e PATH=${pathOnDocker}") {
+
         // Start database.
         sh 'sudo service mysql start'
 
@@ -41,7 +43,7 @@ def call(Map pipelineParams = [:]) {
 
         sh '''
 
-            moodle-plugin-ci install --moodle ${BUILD_NUMBER}/moodle --db-type mysqli --db-user jenkins --db-pass jenkins \
+            moodle-plugin-ci install --moodle ${BUILD_NUMBER}/moodle --db-host 127.0.0.1 --db-type mysqli --db-user jenkins --db-pass jenkins \
                                        --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
 
             moodle-plugin-ci phplint
