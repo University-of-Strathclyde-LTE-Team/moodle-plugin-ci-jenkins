@@ -4,6 +4,7 @@ def call(Map pipelineParams = [:], Closure body) {
     def db = pipelineParams.db ?: 'mysql'
     def runInstall = pipelineParams.containsKey('withInstall') && pipelineParams.withInstall != false
     def withInstall =  pipelineParams.withInstall
+    def withBehatServers = true || pipelineParams.withBehatServers
 
     // Allow true as well as empty string.
     if (withInstall == true) {
@@ -14,6 +15,7 @@ def call(Map pipelineParams = [:], Closure body) {
     echo "Database: ${db}"
     echo "runInstall: ${runInstall}"
     echo "withInstall: ${withInstall}"
+    echo "withBehatServers: ${withBehatServers}"
 
     def installParams = [
         "db-type": null,
@@ -92,7 +94,7 @@ def call(Map pipelineParams = [:], Closure body) {
             sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ${BUILD_NUMBER}/ci ^3'
         }
 
-        if (withInstall != false) {
+        if (runInstall) {
             sh 'moodle-plugin-ci install --db-host 127.0.0.1 --db-type mysqli --db-user jenkins --db-pass jenkins ' + withInstall
         }
 
