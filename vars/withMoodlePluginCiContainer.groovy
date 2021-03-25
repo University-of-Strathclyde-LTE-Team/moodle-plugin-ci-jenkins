@@ -4,7 +4,7 @@ def call(Map pipelineParams = [:], Closure body) {
     def db = pipelineParams.db ?: 'mysql'
     def runInstall = pipelineParams.containsKey('withInstall') && pipelineParams.withInstall != false
     def withInstall =  pipelineParams.withInstall
-    def withBehatServers = pipelineParams.withBehatServers as Boolean
+    def withBehatServers = pipelineParams.withBehatServers ? true : false
 
     // Allow true as well as empty string.
     if (withInstall == true) {
