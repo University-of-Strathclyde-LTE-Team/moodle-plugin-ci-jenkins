@@ -21,8 +21,11 @@ RUN mkdir -p /var/lib/mysql \
     && mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'jenkins'@'localhost'"
 
 # Allow jenkins user to start MySQL
-RUN apt-get install sudo
+RUN apt-get update && apt-get install sudo
 RUN echo "jenkins ALL= NOPASSWD: /usr/sbin/service mysql start" > /etc/sudoers.d/jenkins
+
+# Remove apt cache
+RUN rm -rf /var/lib/apt/lists/*
 
 # Install composer.
 ENV COMPOSER_HOME /composer
@@ -68,8 +71,11 @@ ENV PATH $PHPENV_ROOT/shims:$PHPENV_ROOT/bin:$PATH
 # to rebuild. Set 7.4 as default.
 RUN phpenv install 7.2.34
 RUN phpenv install 7.3.27
-RUN phpenv install 7.4.16 && phpenv global 7.4
+RUN phpenv install 7.4.16
 RUN phpenv install 8.0.3
+
+# Default to 7.4
+RUN phpenv global 7.4
 
 # Install grunt CLI.
 RUN npm install -g grunt-cli
