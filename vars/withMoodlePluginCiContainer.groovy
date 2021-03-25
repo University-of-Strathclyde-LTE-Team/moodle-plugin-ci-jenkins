@@ -40,6 +40,9 @@ def call(Map pipelineParams = [:], Closure body) {
             error("Unknown db type ${db}. Supported types: mysqli, postgres")
     }
 
+    body()
+    return
+
     def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
 
     // Docker does not like upper case letters in tags.
