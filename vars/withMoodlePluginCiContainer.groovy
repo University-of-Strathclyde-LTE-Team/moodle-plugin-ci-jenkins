@@ -36,7 +36,7 @@ def call(Map pipelineParams = [:], Closure body) {
         case 'postgres':
             installParams['db-type'] = 'pgsql'
             break
-        case default:
+        default:
             error("Unknown db type ${db}. Supported types: mysqli, postgres")
     }
 
@@ -74,7 +74,7 @@ def call(Map pipelineParams = [:], Closure body) {
             case 'postgres':
                 error('postgres not yet supported')
                 break
-            case default:
+            default:
                 error("Unknown db type ${db}. Supported types: mysqli, postgres")
         }
 
