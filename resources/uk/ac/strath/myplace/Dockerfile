@@ -74,11 +74,11 @@ ENV PATH $PHPENV_ROOT/shims:$PHPENV_ROOT/bin:$PATH
 # to rebuild.
 # RUN phpenv install 7.2.34
 # RUN phpenv install 7.3.27
-RUN phpenv install 7.4.16
+# RUN phpenv install 7.4.16
 # RUN phpenv install 8.0.3
 
 # Default to 7.4
-RUN phpenv global 7.4
+# RUN phpenv global 7.4
 
 # Install grunt CLI.
 RUN npm install -g grunt-cli
