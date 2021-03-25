@@ -1,10 +1,44 @@
-def call(Map pipelineParams = [:]) {
+def call(Map pipelineParams = [:], Closure body) {
 
     def php = pipelineParams.php ?: '7.2'
     def db = pipelineParams.db ?: 'mysql'
+    def withInstall = pipelineParams.hasKey('withInstall') ? pipelineParams.withInstall : false
+
+    // Allow true as well as empty string.
+    if (withInstall == true) {
+        withInstall = ''
+    }
 
     echo "PHP: ${php}"
     echo "Database: ${db}"
+
+    def installParams = [
+        "db-type": null,
+        "db-user": "jenkins",
+        "db-pass": "jenkins",
+        "db-host": "127.0.0.1"
+    ]
+
+    // Check that none of the controlled parameters has been passed.
+    if (withInstall != false) {
+        installParams.each { key, val ->
+            if (withInstall.contains('--' + key)) {
+                error("The following parameters cannot be passed: db-type, db-user, db-pass, db-host")
+            }
+        }
+    }
+
+    // Validate the database value before building the image.
+    switch (db) {
+        case 'mysql':
+            installParams['db-type'] = 'mysqli'
+            break
+        case 'postgres':
+            installParams['db-type'] = 'pgsql'
+            break
+        case default:
+            error("Unknown db type ${db}. Supported types: mysqli, postgres")
+    }
 
     def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
 
@@ -33,7 +67,17 @@ def call(Map pipelineParams = [:]) {
     image.inside("-e PATH=${pathOnDocker}") {
 
         // Start database.
-        sh 'sudo service mysql start'
+        switch (db) {
+            case 'mysql':
+                sh 'sudo service mysql start'
+                break
+            case 'postgres':
+                error('postgres not yet supported')
+                break
+            case default:
+                error("Unknown db type ${db}. Supported types: mysqli, postgres")
+        }
+
 
         // Set composer and npm directories to allow caching of downloads between jobs.
         withEnv(["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/.composer"]) {
@@ -42,22 +86,11 @@ def call(Map pipelineParams = [:]) {
             sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ${BUILD_NUMBER}/ci ^3'
         }
 
-        sh '''
+        if (withInstall != false) {
+            sh 'moodle-plugin-ci install --db-host 127.0.0.1 --db-type mysqli --db-user jenkins --db-pass jenkins ' + withInstall
+        }
 
-            moodle-plugin-ci install --moodle ${BUILD_NUMBER}/moodle --db-host 127.0.0.1 --db-type mysqli --db-user jenkins --db-pass jenkins \
-                                       --branch MOODLE_38_STABLE --plugin ${WORKSPACE}/plugin
-
-            moodle-plugin-ci phplint
-            moodle-plugin-ci phpcpd
-            moodle-plugin-ci phpmd
-            moodle-plugin-ci codechecker --max-warnings 0
-            moodle-plugin-ci phpdoc || true
-            moodle-plugin-ci validate || true
-            moodle-plugin-ci savepoints
-            moodle-plugin-ci mustache || true
-            # moodle-plugin-ci grunt --max-lint-warnings 0 || true
-            moodle-plugin-ci phpunit
-         '''
+        body()
 
     }
 
