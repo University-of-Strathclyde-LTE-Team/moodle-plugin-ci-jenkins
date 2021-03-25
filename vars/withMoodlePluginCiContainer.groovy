@@ -96,7 +96,8 @@ def call(Map pipelineParams = [:], Closure body) {
 
 
     // TODO: Cleanup stuff should be in a finally block probably.
-    sh "docker rmi ${buildTag}"
+    // No prune is very important or all intermediate images will be removed on first build!
+    sh "docker rmi --no-prune ${buildTag}"
 
     cleanWs deleteDirs: true, notFailBuild: true, patterns: [
         [pattern: "${BUILD_NUMBER}", type: 'INCLUDE'],

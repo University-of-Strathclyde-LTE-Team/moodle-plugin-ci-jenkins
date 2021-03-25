@@ -72,10 +72,10 @@ ENV PATH $PHPENV_ROOT/shims:$PHPENV_ROOT/bin:$PATH
 
 # Keep these in separate layers so we can add new versions without having to wait for all the existing installs
 # to rebuild.
-RUN phpenv install 7.2.34
-RUN phpenv install 7.3.27
+# RUN phpenv install 7.2.34
+# RUN phpenv install 7.3.27
 RUN phpenv install 7.4.16
-RUN phpenv install 8.0.3
+# RUN phpenv install 8.0.3
 
 # Default to 7.4
 RUN phpenv global 7.4
