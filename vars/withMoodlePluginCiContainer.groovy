@@ -3,7 +3,7 @@ def call(Map pipelineParams = [:], Closure body) {
     def php = pipelineParams.php ?: '7.2'
     def db = pipelineParams.db ?: 'mysql'
     def runInstall = pipelineParams.containsKey('withInstall') && pipelineParams.withInstall != false
-    def withInstall =  runInstall ? pipelineParams.withInstall : false
+    def withInstall =  pipelineParams.withInstall
 
     // Allow true as well as empty string.
     if (withInstall == true) {
@@ -23,7 +23,7 @@ def call(Map pipelineParams = [:], Closure body) {
     ]
 
     // Check that none of the controlled parameters has been passed.
-    if (withInstall != false) {
+    if (runInstall) {
         installParams.each { key, val ->
             if (withInstall.contains('--' + key)) {
                 error("The following parameters cannot be passed: db-type, db-user, db-pass, db-host")
