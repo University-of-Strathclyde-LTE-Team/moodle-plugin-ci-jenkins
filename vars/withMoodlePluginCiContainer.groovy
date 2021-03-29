@@ -87,7 +87,7 @@ def call(Map pipelineParams = [:], Closure body) {
         }
 
         if (runInstall) {
-            sh 'moodle-plugin-ci install --db-host 127.0.0.1 --db-type mysqli --db-user jenkins --db-pass jenkins ' + withInstall
+            sh 'cd ${BUILD_NUMBER} && moodle-plugin-ci install --db-host 127.0.0.1 --db-type mysqli --db-user jenkins --db-pass jenkins ' + withInstall
         }
 
         body()
@@ -100,8 +100,7 @@ def call(Map pipelineParams = [:], Closure body) {
     sh "docker rmi --no-prune ${buildTag}"
 
     cleanWs deleteDirs: true, notFailBuild: true, patterns: [
-        [pattern: "${BUILD_NUMBER}", type: 'INCLUDE'],
-        [pattern: "${dockerDir}", type: 'INCLUDE']
+        [pattern: "composer-cache/**", type: 'EXCLUDE']
     ]
 
 }
