@@ -2,14 +2,9 @@ def call(Map pipelineParams = [:], Closure body) {
 
     def php = pipelineParams.php ?: '7.2'
     def db = pipelineParams.db ?: 'mysql'
-    def runInstall = pipelineParams.containsKey('withInstall') && pipelineParams.withInstall != false
+    def runInstall = pipelineParams.containsKey('withInstall')
     def withInstall =  pipelineParams.withInstall
     def withBehatServers = pipelineParams.withBehatServers
-
-    // Allow true as well as empty string.
-    if (withInstall == true) {
-        withInstall = ''
-    }
 
     echo "PHP: ${php}"
     echo "Database: ${db}"
