@@ -3,8 +3,10 @@ FROM ubuntu:20.10
 ENV DEBIAN_FRONTEND="noninteractive"
 
 # Install some basics.
-RUN apt update && apt-get install -y unzip \
+# PHP appears to be needed for phpenv to install its versions.
+RUN apt update && apt-get install -y php unzip \
     curl git docker.io mysql-client mysql-server \
+    postgresql postgresql-client \
     locales
 
 # For phpenv
@@ -70,9 +72,9 @@ ENV PHPENV_ROOT="/home/jenkins/.phpenv"
 ENV PATH $PHPENV_ROOT/shims:$PHPENV_ROOT/bin:$PATH
 
 # Keep these in separate layers so we can add new versions without having to wait for all the existing installs
-# to rebuild. Set 7.4 as default.
-RUN phpenv install 7.2.34
-RUN phpenv install 7.3.27
+# to rebuild.
+# RUN phpenv install 7.2.34
+# RUN phpenv install 7.3.27
 RUN phpenv install 7.4.16
 RUN phpenv install 8.0.3
 
