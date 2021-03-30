@@ -62,7 +62,7 @@ def call(Map pipelineParams = [:], Closure body) {
     // https://issues.jenkins.io/browse/JENKINS-49076
     def phpEnvHome = "/home/jenkins/.phpenv"
     def originalDockerPath = "${phpEnvHome}/shims:${phpEnvHome}/bin:/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-    def pathOnDocker = "${WORKSPACE}/${BUILD_NUMBER}/ci/bin:${originalDockerPath}"
+    def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
 
     image.inside("-e PATH=${pathOnDocker}") {
 
@@ -83,7 +83,7 @@ def call(Map pipelineParams = [:], Closure body) {
         withEnv(["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/.composer"]) {
 
             // Install plugin ci.
-            sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ${BUILD_NUMBER}/ci ^3'
+            sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3'
         }
 
         if (runInstall) {
@@ -100,8 +100,8 @@ def call(Map pipelineParams = [:], Closure body) {
     sh "docker rmi --no-prune ${buildTag}"
 
     cleanWs deleteDirs: true, notFailBuild: true, patterns: [
-        [pattern: "${BUILD_NUMBER}", type: 'INCLUDE'],
-        [pattern: "${dockerDir}", type: 'INCLUDE']
+        [pattern: ".composer/**", type: 'EXCLUDE'],
+        [pattern: ".npm/**", type: 'EXCLUDE']
     ]
 
 }
