@@ -69,6 +69,8 @@ def call(Map pipelineParams = [:], Closure body) {
 
     image.inside("-e PATH=${pathOnDocker}") {
 
+        sh "phpenv global ${php}"
+
         // Start database.
         switch (db) {
             case 'mysql':
