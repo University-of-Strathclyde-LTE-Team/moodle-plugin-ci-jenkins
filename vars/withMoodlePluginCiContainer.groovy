@@ -45,6 +45,9 @@ def call(Map pipelineParams = [:], Closure body) {
     // Docker does not like upper case letters in tags.
     def buildTag = "${BUILD_TAG}".toLowerCase()
 
+    // The BUILD_TAG documentation says slashes are replaced by dashes but this seems to be wrong (in Jenkins 2.263.4)
+    buildTag = buildTag.replace('%2f', '-')
+
     // Create Dockerfile in its own directory to prevent unnecessary context being sent.
     def dockerDir = "${BUILD_TAG}-docker"
     def image = null
