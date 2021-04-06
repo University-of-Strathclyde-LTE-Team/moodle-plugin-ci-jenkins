@@ -89,6 +89,7 @@ USER postgres
 # Create jenkins user. There's probably a better way to do this.
 RUN service postgresql start \
     && createuser -s -i -d -r -l -w jenkins \
+    && createdb jenkins \
     && psql -c "ALTER ROLE jenkins WITH PASSWORD 'jenkins';"
 
 USER jenkins
