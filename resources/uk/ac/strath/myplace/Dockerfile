@@ -27,6 +27,7 @@ RUN mkdir -p /var/lib/mysql \
 # Allow jenkins user to start MySQL
 RUN apt-get update && apt-get install sudo
 RUN echo "jenkins ALL= NOPASSWD: /usr/sbin/service mysql start" > /etc/sudoers.d/jenkins
+RUN echo "jenkins ALL= NOPASSWD: /usr/sbin/service postgresql start" >> /etc/sudoers.d/jenkins
 
 # Remove apt cache
 RUN rm -rf /var/lib/apt/lists/*
@@ -83,3 +84,11 @@ RUN phpenv global 7.4
 
 # Install grunt CLI.
 RUN npm install -g grunt-cli
+
+USER postgres
+# Create jenkins user. There's probably a better way to do this.
+RUN service postgresql start \
+    && createuser -s -i -d -r -l -w jenkins \
+    && psql -c "ALTER ROLE jenkins WITH PASSWORD 'jenkins';"
+
+USER jenkins
