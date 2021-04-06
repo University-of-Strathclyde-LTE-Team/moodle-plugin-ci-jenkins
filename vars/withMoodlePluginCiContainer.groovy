@@ -80,7 +80,7 @@ def call(Map pipelineParams = [:], Closure body) {
                 sh 'sudo service postgresql start'
                 break
             default:
-                error("Unknown db type ${db}. Supported types: mysqli, postgres")
+                error("Unknown db type ${db}. Supported types: mysql, postgres")
         }
 
         sh "sudo update-alternatives --set php /usr/bin/php${php}"
