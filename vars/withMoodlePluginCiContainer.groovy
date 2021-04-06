@@ -77,10 +77,10 @@ def call(Map pipelineParams = [:], Closure body) {
                 sh 'sudo service mysql start'
                 break
             case 'postgres':
-                sh 'service postgresql start'
+                sh 'sudo service postgresql start'
                 break
             default:
-                error("Unknown db type ${db}. Supported types: mysqli, postgres")
+                error("Unknown db type ${db}. Supported types: mysql, postgres")
         }
 
 
