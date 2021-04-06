@@ -58,10 +58,6 @@ ENV NODE_VERSION 14.15.0
 RUN mkdir $NVM_DIR \
     && chown jenkins:jenkins $NVM_DIR
 
-# Allow jenkins user to create a symlink for php (update-alternatives is throwing a segfault
-# when run by jenkins with sudo)
-RUN chmod 777 /usr/local/bin
-
 USER jenkins
 
 # Install NVM
