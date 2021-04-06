@@ -48,6 +48,8 @@ def call(Map pipelineParams = [:], Closure body) {
     // The BUILD_TAG documentation says slashes are replaced by dashes but this seems to be wrong (in Jenkins 2.263.4)
     buildTag = buildTag.replace('%2f', '-')
 
+    sh "echo ${buildTag}"
+    return
     // Create Dockerfile in its own directory to prevent unnecessary context being sent.
     def dockerDir = "${BUILD_TAG}-docker"
     def image = null
