@@ -93,7 +93,7 @@ def call(Map pipelineParams = [:], Closure body) {
         }
 
         if (runInstall) {
-            var installCommand = ['moodle-plugin-ci install']
+            def installCommand = ['moodle-plugin-ci install']
             installParams.each { key, val ->
                 installCommand << "--${key} ${val}"
             }
