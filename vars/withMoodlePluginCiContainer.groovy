@@ -93,7 +93,13 @@ def call(Map pipelineParams = [:], Closure body) {
         }
 
         if (runInstall) {
-            sh 'moodle-plugin-ci install --db-host 127.0.0.1 --db-type mysqli --db-user jenkins --db-pass jenkins ' + withInstall
+            var installCommand = ['moodle-plugin-ci install']
+            installParams.each { key, val ->
+                installCommand << "--${key} ${val}"
+            }
+            installCommand << withInstall
+
+            sh installCommand.join(' ')
         }
 
         body()
