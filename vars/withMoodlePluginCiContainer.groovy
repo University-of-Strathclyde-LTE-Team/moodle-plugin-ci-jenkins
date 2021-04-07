@@ -78,6 +78,11 @@ def call(Map pipelineParams = [:], Closure body) {
                 error("Unknown db type ${db}. Supported types: mysqli, postgres")
         }
 
+        if (!fileExists "/usr/bin/php${php}") {
+            error("PHP ${php} not available");
+        }
+
+        sh "ln -fs /usr/bin/php${php} /usr/local/bin/php"
 
         // Set composer and npm directories to allow caching of downloads between jobs.
         withEnv(["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/.composer"]) {
