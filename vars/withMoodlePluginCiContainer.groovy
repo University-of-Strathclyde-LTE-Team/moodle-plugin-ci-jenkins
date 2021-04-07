@@ -83,6 +83,8 @@ def call(Map pipelineParams = [:], Closure body) {
                 error("Unknown db type ${db}. Supported types: mysql, postgres")
         }
 
+        sh 'ls /usr/bin/php*'
+
         def phpFile = new File("/usr/bin/php${php}")
         if (!phpFile.exists()) {
             error("PHP ${php} not available");
