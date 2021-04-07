@@ -87,7 +87,7 @@ def call(Map pipelineParams = [:], Closure body) {
 
         def phpFile = new File("/usr/bin/php${php}")
         if (!phpFile.exists()) {
-            error("PHP ${php} not available");
+            // error("PHP ${php} not available");
         }
 
         sh "ln -fs /usr/bin/php${php} /usr/local/bin/php"
