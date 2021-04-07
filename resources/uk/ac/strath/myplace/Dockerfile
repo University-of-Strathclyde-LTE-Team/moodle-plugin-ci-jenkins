@@ -30,8 +30,7 @@ RUN mkdir -p /var/lib/mysql \
 # Allow jenkins user to start MySQL
 RUN apt-get update && apt-get install sudo
 RUN echo "jenkins ALL= NOPASSWD: /usr/sbin/service mysql start" > /etc/sudoers.d/jenkins
-RUN echo "jenkins ALL= NOPASSWD: /usr/bin/update-alternatives --set php /usr/bin/php*" >> /etc/sudoers.d/jenkins
-RUN echo "jenkins ALL= NOPASSWD: /usr/sbin/service postgresql start" >> /etc/sudoers.d/jenkins
+RUN echo "jenkins ALL= NOPASSWD: update-alternatives --set php" >> /etc/sudoers.d/jenkins
 
 # Remove apt cache
 RUN rm -rf /var/lib/apt/lists/*
@@ -58,6 +57,10 @@ ENV NODE_VERSION 14.15.0
 RUN mkdir $NVM_DIR \
     && chown jenkins:jenkins $NVM_DIR
 
+# Allow jenkins user to create a symlink for php (update-alternatives is throwing a segfault
+# when run by jenkins with sudo)
+RUN chmod 777 /usr/local/bin
+
 USER jenkins
 
 # Install NVM
@@ -70,30 +73,5 @@ RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash 
 ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
-# Install phpenv
-RUN curl -L https://raw.githubusercontent.com/phpenv/phpenv-installer/master/bin/phpenv-installer | bash
-
-ENV PHPENV_ROOT="/home/jenkins/.phpenv"
-ENV PATH $PHPENV_ROOT/shims:$PHPENV_ROOT/bin:$PATH
-
-# Keep these in separate layers so we can add new versions without having to wait for all the existing installs
-# to rebuild.
-# RUN phpenv install 7.2.34
-# RUN phpenv install 7.3.27
-RUN phpenv install 7.4.16
-RUN phpenv install 8.0.3
-
-# Default to 7.4
-RUN phpenv global 7.4
-
 # Install grunt CLI.
 RUN npm install -g grunt-cli
-
-USER postgres
-# Create jenkins user. There's probably a better way to do this.
-RUN service postgresql start \
-    && createuser -s -i -d -r -l -w jenkins \
-    && createdb jenkins \
-    && psql -c "ALTER ROLE jenkins WITH PASSWORD 'jenkins';"
-
-USER jenkins
