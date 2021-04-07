@@ -72,14 +72,14 @@ def call(Map pipelineParams = [:], Closure body) {
                 sh 'sudo service mysql start'
                 break
             case 'postgres':
-                sh 'service postgresql start'
+                sh 'sudo service postgresql start'
                 break
             default:
                 error("Unknown db type ${db}. Supported types: mysqli, postgres")
         }
 
-        def phpAvailable = fileExists "/usr/bin/php${php}"
-        if (!phpAvailable) {
+        def phpFile = new File("/usr/bin/php${php}")
+        if (!phpFile.exists()) {
             error("PHP ${php} not available");
         }
 
