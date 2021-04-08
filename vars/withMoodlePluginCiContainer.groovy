@@ -64,7 +64,7 @@ def call(Map pipelineParams = [:], Closure body) {
     // (or any other method as far as I can see)
     // https://issues.jenkins.io/browse/JENKINS-49076
     def phpEnvHome = "/home/jenkins/.phpenv"
-    def originalDockerPath = "${phpEnvHome}/shims:${phpEnvHome}/bin:/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    def originalDockerPath = "/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
 
     image.inside("-e PATH=${pathOnDocker}") {
@@ -77,12 +77,13 @@ def call(Map pipelineParams = [:], Closure body) {
                 sh 'sudo service mysql start'
                 break
             case 'postgres':
-                sh 'service postgresql start'
+                sh 'sudo service postgresql start'
                 break
             default:
                 error("Unknown db type ${db}. Supported types: mysqli, postgres")
         }
 
+        sh "sudo update-alternatives --set php /usr/bin/php${php}"
 
         // Set composer and npm directories to allow caching of downloads between jobs.
         withEnv(["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/.composer"]) {

@@ -3,15 +3,18 @@ FROM ubuntu:20.10
 ENV DEBIAN_FRONTEND="noninteractive"
 
 # Install some basics.
-# PHP appears to be needed for phpenv to install its versions.
-RUN apt update && apt-get install -y php unzip \
+RUN apt update && apt-get install -y unzip \
     curl git docker.io mysql-client mysql-server \
     postgresql postgresql-client \
-    locales
+    locales \
+    # For add-apt-repository
+    software-properties-common
 
-# For phpenv
-RUN echo deb-src http://archive.ubuntu.com/ubuntu/ groovy main restricted >> /etc/apt/sources.list
-RUN apt-get update && apt-get install -y libreadline-dev && apt-get build-dep -y php7.4
+RUN add-apt-repository ppa:ondrej/php
+
+RUN for ver in 7.2 7.3 7.4 8.0; do apt-get install -y php$ver php$ver-curl php$ver-gd php$ver-intl \
+    php$ver-mbstring php$ver-mysql php$ver-xml php$ver-zip; done \
+    && update-alternatives --set php /usr/bin/php7.4
 
 # Create a real jenkins user. Jenkins launches containers with the user and group id of the jenkins user on the host.
 RUN mkdir /home/jenkins && groupadd -g 119 jenkins && groupmod -g 120 docker && useradd -r -u 113 -g jenkins jenkins \
@@ -27,6 +30,7 @@ RUN mkdir -p /var/lib/mysql \
 # Allow jenkins user to start MySQL
 RUN apt-get update && apt-get install sudo
 RUN echo "jenkins ALL= NOPASSWD: /usr/sbin/service mysql start" > /etc/sudoers.d/jenkins
+RUN echo "jenkins ALL= NOPASSWD: /usr/bin/update-alternatives --set php /usr/bin/php*" >> /etc/sudoers.d/jenkins
 
 # Remove apt cache
 RUN rm -rf /var/lib/apt/lists/*
@@ -53,6 +57,10 @@ ENV NODE_VERSION 14.15.0
 RUN mkdir $NVM_DIR \
     && chown jenkins:jenkins $NVM_DIR
 
+# Allow jenkins user to create a symlink for php (update-alternatives is throwing a segfault
+# when run by jenkins with sudo)
+RUN chmod 777 /usr/local/bin
+
 USER jenkins
 
 # Install NVM
@@ -64,22 +72,6 @@ RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash 
 
 ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
-
-# Install phpenv
-RUN curl -L https://raw.githubusercontent.com/phpenv/phpenv-installer/master/bin/phpenv-installer | bash
-
-ENV PHPENV_ROOT="/home/jenkins/.phpenv"
-ENV PATH $PHPENV_ROOT/shims:$PHPENV_ROOT/bin:$PATH
-
-# Keep these in separate layers so we can add new versions without having to wait for all the existing installs
-# to rebuild.
-# RUN phpenv install 7.2.34
-# RUN phpenv install 7.3.27
-RUN phpenv install 7.4.16
-RUN phpenv install 8.0.3
-
-# Default to 7.4
-RUN phpenv global 7.4
 
 # Install grunt CLI.
 RUN npm install -g grunt-cli
