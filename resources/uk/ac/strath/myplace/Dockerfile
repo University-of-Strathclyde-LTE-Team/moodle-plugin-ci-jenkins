@@ -70,22 +70,6 @@ RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash 
 ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
-# Install phpenv
-RUN curl -L https://raw.githubusercontent.com/phpenv/phpenv-installer/master/bin/phpenv-installer | bash
-
-ENV PHPENV_ROOT="/home/jenkins/.phpenv"
-ENV PATH $PHPENV_ROOT/shims:$PHPENV_ROOT/bin:$PATH
-
-# Keep these in separate layers so we can add new versions without having to wait for all the existing installs
-# to rebuild.
-# RUN phpenv install 7.2.34
-# RUN phpenv install 7.3.27
-RUN phpenv install 7.4.16
-RUN phpenv install 8.0.3
-
-# Default to 7.4
-RUN phpenv global 7.4
-
 # Install grunt CLI.
 RUN npm install -g grunt-cli
 
