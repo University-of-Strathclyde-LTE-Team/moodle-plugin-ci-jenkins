@@ -64,7 +64,7 @@ def call(Map pipelineParams = [:], Closure body) {
     // (or any other method as far as I can see)
     // https://issues.jenkins.io/browse/JENKINS-49076
     def phpEnvHome = "/home/jenkins/.phpenv"
-    def originalDockerPath = "${phpEnvHome}/shims:${phpEnvHome}/bin:/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    def originalDockerPath = "/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
 
     image.inside("-e PATH=${pathOnDocker}") {
@@ -85,9 +85,10 @@ def call(Map pipelineParams = [:], Closure body) {
 
         sh 'ls /usr/bin/php*'
 
-        def phpFile = new File("/usr/bin/php${php}")
-        if (!phpFile.exists()) {
-            // error("PHP ${php} not available");
+        // TODO: This check is not working.
+        def phpFile = fileExists "/usr/bin/php${php}"
+        if (!phpFile) {
+            error("PHP ${php} not available");
         }
 
         sh "ln -fs /usr/bin/php${php} /usr/local/bin/php"
