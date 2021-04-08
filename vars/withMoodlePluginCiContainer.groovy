@@ -78,10 +78,9 @@ def call(Map pipelineParams = [:], Closure body) {
                 error("Unknown db type ${db}. Supported types: mysqli, postgres")
         }
 
-        sh 'echo "/usr/bin/php"' + php
         // TODO: This check is not working.
-        def phpFile = fileExists "/usr/bin/php" + php
-        if (!phpFile) {
+        def phpFile = new File("/usr/bin/php" + php)
+        if (!phpFile.exists()) {
             error("PHP ${php} not available");
         }
 
