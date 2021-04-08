@@ -64,7 +64,7 @@ def call(Map pipelineParams = [:], Closure body) {
     // (or any other method as far as I can see)
     // https://issues.jenkins.io/browse/JENKINS-49076
     def phpEnvHome = "/home/jenkins/.phpenv"
-    def originalDockerPath = "${phpEnvHome}/shims:${phpEnvHome}/bin:/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    def originalDockerPath = "/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
 
     image.inside("-e PATH=${pathOnDocker}") {
@@ -83,10 +83,9 @@ def call(Map pipelineParams = [:], Closure body) {
                 error("Unknown db type ${db}. Supported types: mysql, postgres")
         }
 
-        sh 'echo "/usr/bin/php${php}"'
-
-        def phpFile = new File("/usr/bin/php${php}")
-        if (!phpFile.exists()) {
+        // TODO: This check is not working.
+        def phpFile = fileExists "/usr/bin/php" + php
+        if (!phpFile) {
             error("PHP ${php} not available");
         }
 
