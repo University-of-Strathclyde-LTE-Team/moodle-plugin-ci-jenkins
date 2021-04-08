@@ -63,13 +63,10 @@ def call(Map pipelineParams = [:], Closure body) {
     // Nasty hack to get around the fact that we can't use withEnv to change the PATH on a container
     // (or any other method as far as I can see)
     // https://issues.jenkins.io/browse/JENKINS-49076
-    def phpEnvHome = "/home/jenkins/.phpenv"
     def originalDockerPath = "/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
 
     image.inside("-e PATH=${pathOnDocker}") {
-
-        sh "phpenv global ${php}"
 
         // Start database.
         switch (db) {
