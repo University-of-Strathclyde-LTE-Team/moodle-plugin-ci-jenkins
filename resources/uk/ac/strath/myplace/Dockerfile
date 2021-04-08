@@ -30,7 +30,7 @@ RUN mkdir -p /var/lib/mysql \
 # Allow jenkins user to start MySQL
 RUN apt-get update && apt-get install sudo
 RUN echo "jenkins ALL= NOPASSWD: /usr/sbin/service mysql start" > /etc/sudoers.d/jenkins
-RUN echo "jenkins ALL= NOPASSWD: update-alternatives --set php" >> /etc/sudoers.d/jenkins
+RUN echo "jenkins ALL= NOPASSWD: /usr/bin/update-alternatives --set php /usr/bin/php*" >> /etc/sudoers.d/jenkins
 
 # Remove apt cache
 RUN rm -rf /var/lib/apt/lists/*
