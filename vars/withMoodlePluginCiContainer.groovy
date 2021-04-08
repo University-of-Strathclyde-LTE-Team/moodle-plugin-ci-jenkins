@@ -83,14 +83,6 @@ def call(Map pipelineParams = [:], Closure body) {
                 error("Unknown db type ${db}. Supported types: mysql, postgres")
         }
 
-        // TODO: This check is not working.
-        def phpPath = "/usr/bin/php" + php
-        sh "echo ${phpPath}"
-        def phpFile = new File(phpPath)
-        if (!phpFile.exists()) {
-            error("PHP ${php} not available");
-        }
-
         sh "ln -fs /usr/bin/php${php} /usr/local/bin/php"
 
         // Set composer and npm directories to allow caching of downloads between jobs.
