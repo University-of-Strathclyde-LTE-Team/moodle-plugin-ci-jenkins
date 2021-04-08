@@ -79,7 +79,9 @@ def call(Map pipelineParams = [:], Closure body) {
         }
 
         // TODO: This check is not working.
-        def phpFile = new File("/usr/bin/php" + php)
+        def phpPath = "/usr/bin/php" + php
+        sh 'echo ${phpPath}'
+        def phpFile = new File(phpPath)
         if (!phpFile.exists()) {
             // error("PHP ${php} not available");
         }
