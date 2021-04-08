@@ -83,7 +83,7 @@ def call(Map pipelineParams = [:], Closure body) {
         // TODO: This check is not working.
         def phpFile = fileExists "/usr/bin/php${php}"
         if (!phpFile) {
-            error("PHP ${php} not available");
+            //error("PHP ${php} not available");
         }
 
         sh "ln -fs /usr/bin/php${php} /usr/local/bin/php"
