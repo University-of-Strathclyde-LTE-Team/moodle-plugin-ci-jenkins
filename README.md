@@ -3,23 +3,23 @@ This is a shared library for [Jenkins](https://www.jenkins.io/) for running
 
 It is currently a work in progress and contributions are very welcome!
 
-#Feature support
+# Feature support
 
-##Supported
+## Supported
 
 * multiple PHP versions
 * mysql and postgres
 
-##Not supported
+## Not supported
 
 * behat
 * additional PHP modules
 
-#Requirements
+# Requirements
 
 Docker must be available on the Jenkins server.
 
-#Usage
+# Usage
 
 The library is intended for use in Jenkins declarative pipelines (although may work in other scenarios).
 
@@ -29,7 +29,7 @@ It provides two custom steps.
 
 This starts up a docker container with a suitable environment for running moodle-plugin-ci.
 
-###Parameters
+### Parameters
 
 * **php**: a PHP version, e.g. 7.4
 * **db**: mysql or postgres
