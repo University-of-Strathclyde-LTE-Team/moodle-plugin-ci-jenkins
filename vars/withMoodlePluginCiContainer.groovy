@@ -80,7 +80,7 @@ def call(Map pipelineParams = [:], Closure body) {
                 sh 'sudo service postgresql start'
                 break
             default:
-                error("Unknown db type ${db}. Supported types: mysqli, postgres")
+                error("Unknown db type ${db}. Supported types: mysql, postgres")
         }
 
         sh "sudo update-alternatives --set php /usr/bin/php${php}"
@@ -93,7 +93,13 @@ def call(Map pipelineParams = [:], Closure body) {
         }
 
         if (runInstall) {
-            sh 'moodle-plugin-ci install --db-host 127.0.0.1 --db-type mysqli --db-user jenkins --db-pass jenkins ' + withInstall
+            def installCommand = ['moodle-plugin-ci install']
+            installParams.each { key, val ->
+                installCommand << "--${key} ${val}"
+            }
+            installCommand << withInstall
+
+            sh installCommand.join(' ')
         }
 
         body()
