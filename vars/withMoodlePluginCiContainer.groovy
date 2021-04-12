@@ -45,6 +45,9 @@ def call(Map pipelineParams = [:], Closure body) {
     // Docker does not like upper case letters in tags.
     def buildTag = "${BUILD_TAG}".toLowerCase()
 
+    // The BUILD_TAG documentation says slashes are replaced by dashes but this seems to be wrong (in Jenkins 2.263.4)
+    buildTag = buildTag.replace('%2f', '-')
+
     // Create Dockerfile in its own directory to prevent unnecessary context being sent.
     def dockerDir = "${BUILD_TAG}-docker"
     def image = null
@@ -60,8 +63,7 @@ def call(Map pipelineParams = [:], Closure body) {
     // Nasty hack to get around the fact that we can't use withEnv to change the PATH on a container
     // (or any other method as far as I can see)
     // https://issues.jenkins.io/browse/JENKINS-49076
-    def phpEnvHome = "/home/jenkins/.phpenv"
-    def originalDockerPath = "${phpEnvHome}/shims:${phpEnvHome}/bin:/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    def originalDockerPath = "/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
 
     image.inside("-e PATH=${pathOnDocker}") {
@@ -72,12 +74,13 @@ def call(Map pipelineParams = [:], Closure body) {
                 sh 'sudo service mysql start'
                 break
             case 'postgres':
-                sh 'service postgresql start'
+                sh 'sudo service postgresql start'
                 break
             default:
-                error("Unknown db type ${db}. Supported types: mysqli, postgres")
+                error("Unknown db type ${db}. Supported types: mysql, postgres")
         }
 
+        sh "sudo update-alternatives --set php /usr/bin/php${php}"
 
         // Set composer and npm directories to allow caching of downloads between jobs.
         withEnv(["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/.composer"]) {
@@ -87,7 +90,13 @@ def call(Map pipelineParams = [:], Closure body) {
         }
 
         if (runInstall) {
-            sh 'moodle-plugin-ci install --db-host 127.0.0.1 --db-type mysqli --db-user jenkins --db-pass jenkins ' + withInstall
+            def installCommand = ['moodle-plugin-ci install']
+            installParams.each { key, val ->
+                installCommand << "--${key} ${val}"
+            }
+            installCommand << withInstall
+
+            sh installCommand.join(' ')
         }
 
         body()
