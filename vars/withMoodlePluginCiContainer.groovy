@@ -69,7 +69,7 @@ def call(Map pipelineParams = [:], Closure body) {
     sh "docker network create ${buildTag}"
 
     if (withBehatServers) {
-        sh "docker run -d --rm -p 127.0.0.1:4444:4444 --name=${buildTag}-selenium --net=${buildTag} --hostname=selenium --shm-size=2g"
+        sh "docker run -d --rm -p 127.0.0.1:4444:4444 --name=${buildTag}-selenium --net=${buildTag} --hostname=selenium --shm-size=2g selenium/standalone-chrome:3"
     }
 
     image.inside("-e PATH=${pathOnDocker} --network ${buildTag}") {
