@@ -49,7 +49,7 @@ def call(Map pipelineParams = [:], Closure body) {
     buildTag = buildTag.replace('%2f', '-')
 
     // Create Dockerfile in its own directory to prevent unnecessary context being sent.
-    def dockerDir = "${BUILD_TAG}-docker"
+    def dockerDir = "${buildTag}-docker"
     def image = null
     dir(dockerDir) {
         writeFile(file: 'Dockerfile', text: dockerFileContents)
@@ -66,7 +66,9 @@ def call(Map pipelineParams = [:], Closure body) {
     def originalDockerPath = "/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
 
-    image.inside("-e PATH=${pathOnDocker}") {
+    sh "docker network create ${buildTag}"
+
+    image.inside("-e PATH=${pathOnDocker} --network ${buildTag}") {
 
         // Start database.
         switch (db) {
@@ -103,6 +105,7 @@ def call(Map pipelineParams = [:], Closure body) {
 
     }
 
+    sh "docker network rm ${buildTag}"
 
     // TODO: Cleanup stuff should be in a finally block probably.
     // No prune is very important or all intermediate images will be removed on first build!
