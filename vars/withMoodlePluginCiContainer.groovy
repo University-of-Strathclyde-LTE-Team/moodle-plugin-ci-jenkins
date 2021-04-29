@@ -69,7 +69,7 @@ def call(Map pipelineParams = [:], Closure body) {
     sh "docker network create ${buildTag}"
 
     if (withBehatServers) {
-        sh "docker run -d --rm -p 127.0.0.1:4444:4444 --name=${buildTag}-selenium --net=${buildTag} --hostname=selenium --shm-size=2g selenium/standalone-chrome:3"
+        sh "docker run -d --rm --name=${buildTag}-selenium --net=${buildTag} --hostname=selenium --shm-size=2g selenium/standalone-chrome:3"
     }
 
     image.inside("-e PATH=${pathOnDocker} --network ${buildTag}") {
@@ -109,6 +109,7 @@ def call(Map pipelineParams = [:], Closure body) {
 
     }
 
+    sh "docker stop ${buildTag}-selenium"
     sh "docker network rm ${buildTag}"
 
     // TODO: Cleanup stuff should be in a finally block probably.
