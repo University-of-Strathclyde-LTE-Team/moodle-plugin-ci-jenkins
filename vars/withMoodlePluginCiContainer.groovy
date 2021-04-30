@@ -12,6 +12,10 @@ def call(Map pipelineParams = [:], Closure body) {
     echo "withInstall: ${withInstall}"
     echo "withBehatServers: ${withBehatServers}"
 
+    if (withBehatServers && !runInstall) {
+        error("withBehatServers can only be specified if install is run")
+    }
+
     def installParams = [
         "db-type": null,
         "db-user": "jenkins",
