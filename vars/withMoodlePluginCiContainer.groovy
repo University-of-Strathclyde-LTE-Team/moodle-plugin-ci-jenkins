@@ -72,7 +72,7 @@ def call(Map pipelineParams = [:], Closure body) {
         sh "docker run -d --rm --name=${buildTag}-selenium --network=${buildTag} --network-alias=selenium --shm-size=2g selenium/standalone-chrome:3"
     }
 
-    image.inside("-e PATH=${pathOnDocker} --network ${buildTag}") {
+    image.inside("-e PATH=${pathOnDocker} --network ${buildTag} --network-alias=moodle") {
 
         // Start database.
         switch (db) {
@@ -103,6 +103,10 @@ def call(Map pipelineParams = [:], Closure body) {
             installCommand << withInstall
 
             sh installCommand.join(' ')
+        }
+
+        if (withBehatServers) {
+            sh "php -S http://0.0.0.0:8000 -t ${WORKSPACE}/moodle"
         }
 
         body()
