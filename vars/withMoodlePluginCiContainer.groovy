@@ -69,10 +69,10 @@ def call(Map pipelineParams = [:], Closure body) {
     sh "docker network create ${buildTag}"
 
     if (withBehatServers) {
-        sh "docker run -d --rm --name=${buildTag}-selenium --network=${buildTag} --hostname=selenium --shm-size=2g selenium/standalone-chrome:3"
+        sh "docker run -d --rm --name=${buildTag}-selenium --network=${buildTag} --network-alias=selenium --shm-size=2g selenium/standalone-chrome:3"
     }
 
-    image.inside("-e PATH=${pathOnDocker} -e NAME_PREFIX=${buildTag} --network ${buildTag}") {
+    image.inside("-e PATH=${pathOnDocker} -e --network ${buildTag}") {
 
         // Start database.
         switch (db) {
