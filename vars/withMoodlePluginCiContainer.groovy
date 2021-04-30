@@ -72,7 +72,7 @@ def call(Map pipelineParams = [:], Closure body) {
         sh "docker run -d --rm --name=${buildTag}-selenium --network=${buildTag} --hostname=selenium --shm-size=2g selenium/standalone-chrome:3"
     }
 
-    image.inside("-e PATH=${pathOnDocker} -e BUILD_TAG=${buildTag} --network ${buildTag}") {
+    image.inside("-e PATH=${pathOnDocker} -e NAME_PREFIX=${buildTag} --network ${buildTag}") {
 
         // Start database.
         switch (db) {
