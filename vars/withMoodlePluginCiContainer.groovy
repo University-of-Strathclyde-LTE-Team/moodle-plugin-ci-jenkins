@@ -97,7 +97,6 @@ def call(Map pipelineParams = [:], Closure body) {
         if (withBehatServers) {
             installEnv << "MOODLE_BEHAT_WDHOST=http://selenium-chrome:4444/wd/hub"
             installEnv << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
-            installEnv << "MOODLE_START_BEHAT_SERVERS=false"
         }
         withEnv(installEnv) {
 
@@ -119,7 +118,12 @@ def call(Map pipelineParams = [:], Closure body) {
             sh "php -S 0.0.0.0:8000 -t ${WORKSPACE}/moodle &"
         }
 
-        body()
+        // The script has a flag to prevent the servers starting but appears to override it with an environment
+        // variable if the plugin has behat tests (in TestSuiteInstaller::getBehatInstallProcesses())
+        withEnv(["MOODLE_START_BEHAT_SERVERS=false"]) {
+            body()
+        }
+
 
     }
 
