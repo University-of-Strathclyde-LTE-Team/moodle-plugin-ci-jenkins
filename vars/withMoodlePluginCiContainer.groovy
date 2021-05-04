@@ -97,6 +97,7 @@ def call(Map pipelineParams = [:], Closure body) {
         if (withBehatServers) {
             installEnv << "MOODLE_BEHAT_WDHOST=http://selenium-chrome:4444/wd/hub"
             installEnv << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
+            installEnv << "MOODLE_START_BEHAT_SERVERS=false"
         }
         withEnv(installEnv) {
 
