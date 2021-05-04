@@ -93,7 +93,12 @@ def call(Map pipelineParams = [:], Closure body) {
         sh "sudo update-alternatives --set php /usr/bin/php${php}"
 
         // Set composer and npm directories to allow caching of downloads between jobs.
-        withEnv(["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/.composer"]) {
+        def installEnv = ["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/.composer"]
+        if (withBehatServers) {
+            installEnv << "MOODLE_BEHAT_WDHOST=http://selenium-chrome:4444/wd/hub"
+            installEnv << "MOODLE_BEHAT_WWWROOT=http://moodle"
+        }
+        withEnv(installEnv) {
 
             // Install plugin ci.
             sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3'
