@@ -117,7 +117,9 @@ def call(Map pipelineParams = [:], Closure body) {
 
     }
 
-    sh "docker stop ${buildTag}-selenium"
+    if (withBehatServers) {
+        sh "docker stop ${buildTag}-selenium"
+    }
     sh "docker network rm ${buildTag}"
 
     // TODO: Cleanup stuff should be in a finally block probably.
