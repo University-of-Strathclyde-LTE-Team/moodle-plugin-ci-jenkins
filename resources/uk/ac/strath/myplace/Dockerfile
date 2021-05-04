@@ -24,7 +24,7 @@ RUN mkdir /home/jenkins && groupadd -g 119 jenkins && groupmod -g 120 docker && 
 RUN mkdir -p /var/lib/mysql \
     && usermod -d /var/lib/mysql/ mysql \
     && service mysql start \
-    && mysql -e "CREATE USER jenkins@localhost IDENTIFIED BY 'jenkins'" \
+    && mysql -e "CREATE USER jenkins@localhost IDENTIFIED WITH mysql_native_password BY 'jenkins'" \
     && mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'jenkins'@'localhost'"
 
 # Allow jenkins user to start MySQL
