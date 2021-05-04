@@ -96,7 +96,7 @@ def call(Map pipelineParams = [:], Closure body) {
         def installEnv = ["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/.composer"]
         if (withBehatServers) {
             installEnv << "MOODLE_BEHAT_WDHOST=http://selenium-chrome:4444/wd/hub"
-            installEnv << "MOODLE_BEHAT_WWWROOT=http://moodle"
+            installEnv << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
         }
         withEnv(installEnv) {
 
