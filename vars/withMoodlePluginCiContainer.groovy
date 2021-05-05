@@ -94,12 +94,13 @@ def call(Map pipelineParams = [:], Closure body) {
 
         // Set composer and npm directories to allow caching of downloads between jobs.
         def installEnv = ["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/.composer"]
+
         if (withBehatServers) {
-            installEnv << "MOODLE_BEHAT_WDHOST=http://selenium-chrome:4444/wd/hub"
+            installEnv << "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub"
             installEnv << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
         }
-        withEnv(installEnv) {
 
+        withEnv(installEnv) {
             // Install plugin ci.
             sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3'
         }
@@ -107,7 +108,7 @@ def call(Map pipelineParams = [:], Closure body) {
         // Preload env file with variables to work around withEnv not apparently being picked up by symfony.
         // This shouldn't be necessary so we should get rid of it once we understand the problem.
         def envFile = new File("$WORKSPACE/ci/.env")
-        envFile.write "MOODLE_BEHAT_WDHOST=http://selenium-chrome:4444/wd/hub\n"
+        envFile.write "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub\n"
         envFile << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
 
         if (runInstall) {
@@ -138,6 +139,7 @@ def call(Map pipelineParams = [:], Closure body) {
     if (withBehatServers) {
         sh "docker stop ${buildTag}-selenium"
     }
+
     sh "docker network rm ${buildTag}"
 
     // TODO: Cleanup stuff should be in a finally block probably.
