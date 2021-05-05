@@ -95,7 +95,7 @@ def call(Map pipelineParams = [:], Closure body) {
         // Preload env file with variables to work around withEnv not apparently being picked up by symfony.
         // This shouldn't be necessary so we should get rid of it once we understand the problem.
         def envFile = new File("$WORKSPACE/ci/.env")
-        envFile << "MOODLE_BEHAT_WDHOST=http://selenium-chrome:4444/wd/hub"
+        envFile.write "MOODLE_BEHAT_WDHOST=http://selenium-chrome:4444/wd/hub"
         envFile << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
 
         // Set composer and npm directories to allow caching of downloads between jobs.
