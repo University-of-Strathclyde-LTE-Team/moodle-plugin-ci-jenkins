@@ -118,12 +118,15 @@ def call(Map pipelineParams = [:], Closure body) {
             sh "php -S 0.0.0.0:8000 -t ${WORKSPACE}/moodle &"
         }
 
+        // Workaround for the withEnv below not appearing to work.
+        def envFile = new File("$WORKSPACE/ci/.env")
+        envFile.text = envFile.text.replace('MOODLE_START_BEHAT_SERVERS=YES', '')
+
         // The script has a flag to prevent the servers starting but appears to override it with an environment
         // variable if the plugin has behat tests (in TestSuiteInstaller::getBehatInstallProcesses())
         withEnv(["MOODLE_START_BEHAT_SERVERS=false"]) {
             body()
         }
-
 
     }
 
