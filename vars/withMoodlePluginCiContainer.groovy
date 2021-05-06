@@ -16,6 +16,12 @@ def call(Map pipelineParams = [:], Closure body) {
         error("withBehatServers can only be specified if install is run")
     }
 
+    if (withBehatServers) {
+        if (!(withBehatServers in ['chrome', 'firefox'])) {
+            error('withBehatServers must be chrome or firefox')
+        }
+    }
+
     def installParams = [
         "db-type": null,
         "db-user": "jenkins",
@@ -73,7 +79,12 @@ def call(Map pipelineParams = [:], Closure body) {
     sh "docker network create ${buildTag}"
 
     if (withBehatServers) {
-        sh "docker run -d --rm --name=${buildTag}-selenium --network=${buildTag} --network-alias=selenium --shm-size=2g selenium/standalone-chrome:3"
+        // We have checked earlier that it's either chrome or firefox.
+        def seleniumImage = 'selenium/standalone-chrome:3'
+        if (withBehatServers == 'firefox') {
+            seleniumImage = 'selenium/standalone-firefox:3.141.59'
+        }
+        sh "docker run -d --rm --name=${buildTag}-selenium --network=${buildTag} --network-alias=selenium --shm-size=2g ${seleniumImage}"
     }
 
     image.inside("-e PATH=${pathOnDocker} --network ${buildTag} --network-alias=moodle") {
