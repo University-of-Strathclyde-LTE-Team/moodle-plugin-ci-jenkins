@@ -3,7 +3,7 @@ FROM ubuntu:20.10
 ENV DEBIAN_FRONTEND="noninteractive"
 
 # Install some basics.
-RUN apt update && apt-get install -y unzip \
+RUN apt-get update && apt-get install -y unzip \
     curl git docker.io mysql-client mysql-server \
     postgresql postgresql-client \
     locales \
