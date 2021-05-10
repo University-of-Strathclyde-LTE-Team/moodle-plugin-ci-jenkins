@@ -1,6 +1,14 @@
 def call(Map pipelineParams = [:], Closure body) {
+
+
+    // Docker does not like upper case letters in tags.
+    def buildTag = "${BUILD_TAG}".toLowerCase()
+
+    // The BUILD_TAG documentation says slashes are replaced by dashes but this seems to be wrong (in Jenkins 2.263.4)
+    buildTag = buildTag.replace('%2f', '-')
+
     try {
-        runContainers(pipelineParams, body)
+        runContainers(buildTag, pipelineParams, body)
     } finally {
         cleanWs deleteDirs: true, notFailBuild: true, patterns: [
             [pattern: ".composer/**", type: 'EXCLUDE'],
@@ -20,7 +28,7 @@ def call(Map pipelineParams = [:], Closure body) {
 
 }
 
-private def runContainers(Map pipelineParams = [:], Closure body) {
+private def runContainers(String buildTag, Map pipelineParams = [:], Closure body) {
 
     def php = pipelineParams.php ?: '7.2'
     def db = pipelineParams.db ?: 'mysql'
@@ -67,12 +75,6 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
     }
 
     def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
-
-    // Docker does not like upper case letters in tags.
-    def buildTag = "${BUILD_TAG}".toLowerCase()
-
-    // The BUILD_TAG documentation says slashes are replaced by dashes but this seems to be wrong (in Jenkins 2.263.4)
-    buildTag = buildTag.replace('%2f', '-')
 
     // Create Dockerfile in its own directory to prevent unnecessary context being sent.
     def dockerDir = "${buildTag}-docker"
