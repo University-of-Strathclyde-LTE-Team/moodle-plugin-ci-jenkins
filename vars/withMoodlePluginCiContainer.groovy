@@ -3,7 +3,7 @@ def call(Map pipelineParams = [:], Closure body) {
     def buildTag = buildTag()
 
     try {
-        runContainers(buildTag, pipelineParams, body)
+        runContainers(pipelineParams, body)
     } finally {
         cleanWs deleteDirs: true, notFailBuild: true, patterns: [
             [pattern: ".composer/**", type: 'EXCLUDE'],
