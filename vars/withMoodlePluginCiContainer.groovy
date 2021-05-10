@@ -1,4 +1,15 @@
 def call(Map pipelineParams = [:], Closure body) {
+    try {
+        runContainers(pipelineParams, body)
+    } finally {
+        cleanWs deleteDirs: true, notFailBuild: true, patterns: [
+            [pattern: ".composer/**", type: 'EXCLUDE'],
+            [pattern: ".npm/**", type: 'EXCLUDE']
+        ]
+    }
+}
+
+def runContainers(Map pipelineParams = [:], Closure body) {
 
     def php = pipelineParams.php ?: '7.2'
     def db = pipelineParams.db ?: 'mysql'
@@ -70,12 +81,6 @@ def call(Map pipelineParams = [:], Closure body) {
     sh 'mkdir -p ${WORKSPACE}/.npm && chmod 777 ${WORKSPACE}/.npm \
             && mkdir -p ${WORKSPACE}/.composer && chmod 777 ${WORKSPACE}/.composer'
 
-    // Nasty hack to get around the fact that we can't use withEnv to change the PATH on a container
-    // (or any other method as far as I can see)
-    // https://issues.jenkins.io/browse/JENKINS-49076
-    def originalDockerPath = "/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-    def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
-
     sh "docker network create ${buildTag}"
 
     if (withBehatServers) {
@@ -86,6 +91,12 @@ def call(Map pipelineParams = [:], Closure body) {
         }
         sh "docker run -d --rm --name=${buildTag}-selenium --network=${buildTag} --network-alias=selenium --shm-size=2g ${seleniumImage}"
     }
+
+    // Nasty hack to get around the fact that we can't use withEnv to change the PATH on a container
+    // (or any other method as far as I can see)
+    // https://issues.jenkins.io/browse/JENKINS-49076
+    def originalDockerPath = "/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
 
     image.inside("-e PATH=${pathOnDocker} --network ${buildTag} --network-alias=moodle") {
 
@@ -156,10 +167,5 @@ def call(Map pipelineParams = [:], Closure body) {
     // TODO: Cleanup stuff should be in a finally block probably.
     // No prune is very important or all intermediate images will be removed on first build!
     sh "docker rmi --no-prune ${buildTag}"
-
-    cleanWs deleteDirs: true, notFailBuild: true, patterns: [
-        [pattern: ".composer/**", type: 'EXCLUDE'],
-        [pattern: ".npm/**", type: 'EXCLUDE']
-    ]
 
 }
