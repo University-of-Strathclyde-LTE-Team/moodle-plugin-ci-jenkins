@@ -1,16 +1,44 @@
 def call(Map pipelineParams = [:], Closure body) {
 
+    def buildTag = buildTag()
+
+    try {
+        runContainers(pipelineParams, body)
+    } finally {
+        cleanWs deleteDirs: true, notFailBuild: true, patterns: [
+            [pattern: ".composer/**", type: 'EXCLUDE'],
+            [pattern: ".npm/**", type: 'EXCLUDE']
+        ]
+
+        // Use "|| true" to prevent cleanup failing job.
+        if (pipelineParams.withBehatServers) {
+            sh "docker stop ${buildTag}-selenium || true"
+        }
+
+        sh "docker network rm ${buildTag} || true"
+        // No prune is very important or all intermediate images will be removed on first build!
+        sh "docker rmi --no-prune ${buildTag} || true"
+    }
+
+
+}
+
+private def buildTag() {
+        // Docker does not like upper case letters in tags.
+        def buildTag = "${BUILD_TAG}".toLowerCase()
+
+        // The BUILD_TAG documentation says slashes are replaced by dashes but this seems to be wrong (in Jenkins 2.263.4)
+        buildTag = buildTag.replace('%2f', '-')
+        return buildTag
+}
+
+private def runContainers(Map pipelineParams = [:], Closure body) {
+
     def php = pipelineParams.php ?: '7.2'
     def db = pipelineParams.db ?: 'mysql'
     def runInstall = pipelineParams.containsKey('withInstall')
     def withInstall =  pipelineParams.withInstall
     def withBehatServers = pipelineParams.withBehatServers
-
-    echo "PHP: ${php}"
-    echo "Database: ${db}"
-    echo "runInstall: ${runInstall}"
-    echo "withInstall: ${withInstall}"
-    echo "withBehatServers: ${withBehatServers}"
 
     if (withBehatServers && !runInstall) {
         error("withBehatServers can only be specified if install is run")
@@ -52,11 +80,7 @@ def call(Map pipelineParams = [:], Closure body) {
 
     def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
 
-    // Docker does not like upper case letters in tags.
-    def buildTag = "${BUILD_TAG}".toLowerCase()
-
-    // The BUILD_TAG documentation says slashes are replaced by dashes but this seems to be wrong (in Jenkins 2.263.4)
-    buildTag = buildTag.replace('%2f', '-')
+    def buildTag = buildTag()
 
     // Create Dockerfile in its own directory to prevent unnecessary context being sent.
     def dockerDir = "${buildTag}-docker"
@@ -70,12 +94,6 @@ def call(Map pipelineParams = [:], Closure body) {
     sh 'mkdir -p ${WORKSPACE}/.npm && chmod 777 ${WORKSPACE}/.npm \
             && mkdir -p ${WORKSPACE}/.composer && chmod 777 ${WORKSPACE}/.composer'
 
-    // Nasty hack to get around the fact that we can't use withEnv to change the PATH on a container
-    // (or any other method as far as I can see)
-    // https://issues.jenkins.io/browse/JENKINS-49076
-    def originalDockerPath = "/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-    def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
-
     sh "docker network create ${buildTag}"
 
     if (withBehatServers) {
@@ -86,6 +104,12 @@ def call(Map pipelineParams = [:], Closure body) {
         }
         sh "docker run -d --rm --name=${buildTag}-selenium --network=${buildTag} --network-alias=selenium --shm-size=2g ${seleniumImage}"
     }
+
+    // Nasty hack to get around the fact that we can't use withEnv to change the PATH on a container
+    // (or any other method as far as I can see)
+    // https://issues.jenkins.io/browse/JENKINS-49076
+    def originalDockerPath = "/var/lib/nvm/versions/node/v14.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
 
     image.inside("-e PATH=${pathOnDocker} --network ${buildTag} --network-alias=moodle") {
 
@@ -146,20 +170,5 @@ def call(Map pipelineParams = [:], Closure body) {
         }
 
     }
-
-    if (withBehatServers) {
-        sh "docker stop ${buildTag}-selenium"
-    }
-
-    sh "docker network rm ${buildTag}"
-
-    // TODO: Cleanup stuff should be in a finally block probably.
-    // No prune is very important or all intermediate images will be removed on first build!
-    sh "docker rmi --no-prune ${buildTag}"
-
-    cleanWs deleteDirs: true, notFailBuild: true, patterns: [
-        [pattern: ".composer/**", type: 'EXCLUDE'],
-        [pattern: ".npm/**", type: 'EXCLUDE']
-    ]
 
 }
