@@ -9,19 +9,13 @@ def call(Map pipelineParams = [:], Closure body) {
     }
 }
 
-def runContainers(Map pipelineParams = [:], Closure body) {
+private def runContainers(Map pipelineParams = [:], Closure body) {
 
     def php = pipelineParams.php ?: '7.2'
     def db = pipelineParams.db ?: 'mysql'
     def runInstall = pipelineParams.containsKey('withInstall')
     def withInstall =  pipelineParams.withInstall
     def withBehatServers = pipelineParams.withBehatServers
-
-    echo "PHP: ${php}"
-    echo "Database: ${db}"
-    echo "runInstall: ${runInstall}"
-    echo "withInstall: ${withInstall}"
-    echo "withBehatServers: ${withBehatServers}"
 
     if (withBehatServers && !runInstall) {
         error("withBehatServers can only be specified if install is run")
