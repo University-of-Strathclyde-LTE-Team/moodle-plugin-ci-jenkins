@@ -6,16 +6,18 @@ def call(Map pipelineParams = [:], Closure body) {
             [pattern: ".composer/**", type: 'EXCLUDE'],
             [pattern: ".npm/**", type: 'EXCLUDE']
         ]
+
+        // Use "|| true" to prevent cleanup failing job.
+        if (pipelineParams.withBehatServers) {
+            sh "docker stop ${buildTag}-selenium || true"
+        }
+
+        sh "docker network rm ${buildTag} || true"
+        // No prune is very important or all intermediate images will be removed on first build!
+        sh "docker rmi --no-prune ${buildTag} || true"
     }
 
-    // Use "|| true" to prevent cleanup failing job.
-    if (pipelineParams.withBehatServers) {
-        sh "docker stop ${buildTag}-selenium || true"
-    }
 
-    sh "docker network rm ${buildTag} || true"
-    // No prune is very important or all intermediate images will be removed on first build!
-    sh "docker rmi --no-prune ${buildTag} || true"
 }
 
 private def runContainers(Map pipelineParams = [:], Closure body) {
