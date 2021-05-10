@@ -8,18 +8,14 @@ def call(Map pipelineParams = [:], Closure body) {
         ]
     }
 
-    // Use try to prevent cleanup failing job.
+    // Use "|| true" to prevent cleanup failing job.
     if (pipelineParams.withBehatServers) {
-        try {
-            sh "docker stop ${buildTag}-selenium"
-        }
+        sh "docker stop ${buildTag}-selenium || true"
     }
 
-    try {
-        sh "docker network rm ${buildTag}"
-        // No prune is very important or all intermediate images will be removed on first build!
-        sh "docker rmi --no-prune ${buildTag}"
-    }
+    sh "docker network rm ${buildTag} || true"
+    // No prune is very important or all intermediate images will be removed on first build!
+    sh "docker rmi --no-prune ${buildTag} || true"
 }
 
 private def runContainers(Map pipelineParams = [:], Closure body) {
