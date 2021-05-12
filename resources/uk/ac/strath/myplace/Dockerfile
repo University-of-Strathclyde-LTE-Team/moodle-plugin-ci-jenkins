@@ -3,8 +3,6 @@ FROM ubuntu:20.10
 ENV DEBIAN_FRONTEND="noninteractive"
 ARG JENKINS_USERID
 
-RUN echo ${JENKINS_USERID}
-
 # Install some basics.
 RUN apt-get update && apt-get install -y unzip \
     curl git mysql-client mysql-server \
