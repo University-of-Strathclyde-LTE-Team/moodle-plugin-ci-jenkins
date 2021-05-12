@@ -9,10 +9,10 @@ It is currently a work in progress and contributions are very welcome!
 
 * multiple PHP versions
 * mysql and postgres
+* behat
 
 ## Not supported
 
-* behat
 * additional PHP modules
 
 # Requirements
@@ -22,6 +22,8 @@ Docker must be available on the Jenkins server.
 # Usage
 
 The library is intended for use in Jenkins declarative pipelines (although may work in other scenarios).
+
+It should be set up as normal for a shared library in the Jenkins global settings.
 
 It provides two custom steps.
 
@@ -36,6 +38,8 @@ This starts up a docker container with a suitable environment for running moodle
 * **withInstall**: command line parameters for the moodle-plugin-ci install command. If this is 
 not passed the install command will not run, but it may be empty. The following parameters are managed
   by the step and are not permitted: db-type, db-user, db-pass, db-host
+* **withBehatServers**: chrome or firefox. This will start the relevant selenium container and the PHP
+  built-in web server to allow the behat command to be run.
   
 The step also expects a code block which will be run inside the container, e.g.
 
