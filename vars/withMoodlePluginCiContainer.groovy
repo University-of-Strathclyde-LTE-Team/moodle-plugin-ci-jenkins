@@ -87,7 +87,7 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
     def image = null
     dir(dockerDir) {
         writeFile(file: 'Dockerfile', text: dockerFileContents)
-        def jenkinsUserId = sh(script: 'id -u', returnStdout: true)
+        def jenkinsUserId = sh(script: 'id -u', returnStdout: true).trim()
         image = docker.build(buildTag, "--build-arg JENKINS_USERID=${jenkinsUserId} .")
     }
 
