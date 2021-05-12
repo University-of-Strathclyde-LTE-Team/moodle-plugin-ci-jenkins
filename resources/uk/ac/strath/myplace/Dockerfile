@@ -2,13 +2,9 @@ FROM ubuntu:20.10
 
 ENV DEBIAN_FRONTEND="noninteractive"
 
-ENV JENKINS_GROUP="$(getent group jenkins| cut -d: -f3)"
-ENV DOCKER_GROUP="$(getent group docker| cut -d: -f3)"
-ENV JENKINS_USER="$(id -u jenkins)"
-
 # Install some basics.
 RUN apt-get update && apt-get install -y unzip \
-    curl git docker.io mysql-client mysql-server \
+    curl git mysql-client mysql-server \
     postgresql postgresql-client \
     locales \
     # For add-apt-repository
@@ -20,9 +16,8 @@ RUN for ver in 7.2 7.3 7.4 8.0; do apt-get install -y php$ver php$ver-curl php$v
     php$ver-mbstring php$ver-mysql php$ver-xml php$ver-zip; done \
     && update-alternatives --set php /usr/bin/php7.4
 
-# Create a real jenkins user. Jenkins launches containers with the user and group id of the jenkins user on the host.
-RUN mkdir /home/jenkins && groupadd -g ${JENKINS_GROUP} jenkins && groupmod -g ${DOCKER_GROUP} docker \
-    && useradd -r -u ${JENKINS_USER} -g jenkins jenkins \
+# Create a real jenkins user. Git will not work correctly if the current user is just an id without a user entry.
+RUN mkdir /home/jenkins && groupadd -g $(id -g) jenkins && useradd -r -u $(id -u) -g jenkins jenkins \
     && chown jenkins:jenkins /home/jenkins
 
 # Create a home directory for mysql so service can be started.
