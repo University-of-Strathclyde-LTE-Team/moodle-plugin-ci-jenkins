@@ -87,7 +87,8 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
     def image = null
     dir(dockerDir) {
         writeFile(file: 'Dockerfile', text: dockerFileContents)
-        image = docker.build(buildTag)
+        def jenkinsUserId = sh(script: 'id -u', returnStdout: true).trim()
+        image = docker.build(buildTag, "--build-arg JENKINS_USERID=${jenkinsUserId} .")
     }
 
     // Create composer and npm cache directories if they don't exist.
