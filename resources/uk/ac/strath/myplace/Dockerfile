@@ -1,7 +1,6 @@
 FROM ubuntu:20.10
 
 ENV DEBIAN_FRONTEND="noninteractive"
-ARG JENKINS_USERID
 
 # Install some basics.
 RUN apt-get update && apt-get install -y unzip \
@@ -18,6 +17,7 @@ RUN for ver in 7.2 7.3 7.4 8.0; do apt-get install -y php$ver php$ver-curl php$v
     && update-alternatives --set php /usr/bin/php7.4
 
 # Create a real jenkins user. Git will not work correctly if the current user is just an id without a user entry.
+ARG JENKINS_USERID
 RUN useradd -m -r -u ${JENKINS_USERID} jenkins
 
 # Create a home directory for mysql so service can be started.
