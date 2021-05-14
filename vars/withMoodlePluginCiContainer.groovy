@@ -32,6 +32,10 @@ private def buildTag() {
         return buildTag
 }
 
+private def moodlePluginCiInstall() {
+    sh 'echo Hello from moodlePluginCiInstall'
+}
+
 private def runContainers(Map pipelineParams = [:], Closure body) {
 
     def php = pipelineParams.php ?: '7.2'
