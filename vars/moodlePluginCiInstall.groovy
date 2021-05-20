@@ -5,6 +5,8 @@ def call(String command = '') {
         error("DB environment variable must be set. Are you running moodlePluginCiInstall outside of the container?")
     }
 
+    // The DB env variable can probably be used directly by moodle-plugin-ci, but this lets us check the user hasn't
+    // tried to pass it more easily.
     def installParams = [
         "db-type": db,
         "db-user": "jenkins",

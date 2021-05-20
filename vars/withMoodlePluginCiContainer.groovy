@@ -137,6 +137,8 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
         // Workaround for the withEnv below not appearing to work.
         envFile.text = envFile.text.replace('MOODLE_START_BEHAT_SERVERS=YES', '')
 
+        // DB variable is required by the moodlePluginCiInstall step.
+        //
         // The script has a flag to prevent the servers starting but appears to override it with an environment
         // variable if the plugin has behat tests (in TestSuiteInstaller::getBehatInstallProcesses())
         withEnv(["DB=${installDb}", "MOODLE_START_BEHAT_SERVERS=false"]) {
