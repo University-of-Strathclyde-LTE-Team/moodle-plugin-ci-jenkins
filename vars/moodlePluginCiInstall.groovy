@@ -1,4 +1,4 @@
-def call(String command) {
+def call(String command = '') {
 
     def db = "${DB}"
     if (!db) {
