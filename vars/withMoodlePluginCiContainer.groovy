@@ -36,8 +36,6 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
 
     def php = pipelineParams.php ?: '7.2'
     def db = pipelineParams.db ?: 'mysql'
-    def runInstall = pipelineParams.containsKey('withInstall')
-    def withInstall =  pipelineParams.withInstall
     def withBehatServers = pipelineParams.withBehatServers
 
     if (withBehatServers && !runInstall) {
@@ -50,29 +48,14 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
         }
     }
 
-    def installParams = [
-        "db-type": null,
-        "db-user": "jenkins",
-        "db-pass": "jenkins",
-        "db-host": "127.0.0.1"
-    ]
-
-    // Check that none of the controlled parameters has been passed.
-    if (runInstall) {
-        installParams.each { key, val ->
-            if (withInstall.contains('--' + key)) {
-                error("The following parameters cannot be passed: db-type, db-user, db-pass, db-host")
-            }
-        }
-    }
-
     // Validate the database value before building the image.
+    def installDb = null
     switch (db) {
         case 'mysql':
-            installParams['db-type'] = 'mysqli'
+            installDb = 'mysqli'
             break
         case 'postgres':
-            installParams['db-type'] = 'pgsql'
+            installDb = 'pgsql'
             break
         default:
             error("Unknown db type ${db}. Supported types: mysqli, postgres")
@@ -147,16 +130,6 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
         envFile.write "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub\n"
         envFile << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
 
-        if (runInstall) {
-            def installCommand = ['moodle-plugin-ci install']
-            installParams.each { key, val ->
-                installCommand << "--${key} ${val}"
-            }
-            installCommand << withInstall
-
-            sh installCommand.join(' ')
-        }
-
         if (withBehatServers) {
             sh "php -S 0.0.0.0:8000 -t ${WORKSPACE}/moodle &"
         }
@@ -164,9 +137,11 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
         // Workaround for the withEnv below not appearing to work.
         envFile.text = envFile.text.replace('MOODLE_START_BEHAT_SERVERS=YES', '')
 
+        // DB variable is required by the moodlePluginCiInstall step.
+        //
         // The script has a flag to prevent the servers starting but appears to override it with an environment
         // variable if the plugin has behat tests (in TestSuiteInstaller::getBehatInstallProcesses())
-        withEnv(["MOODLE_START_BEHAT_SERVERS=false"]) {
+        withEnv(["DB=${installDb}", "MOODLE_START_BEHAT_SERVERS=false"]) {
             body()
         }
 
