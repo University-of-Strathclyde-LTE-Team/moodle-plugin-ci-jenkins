@@ -14,7 +14,7 @@ def call(String command = '') {
 
     installParams.each { key, val ->
         if (command.contains('--' + key)) {
-            error("The following parameters cannot be passed: db-user, db-pass, db-host")
+            error("The following parameters cannot be passed: db-type, db-user, db-pass, db-host")
         }
     }
 
