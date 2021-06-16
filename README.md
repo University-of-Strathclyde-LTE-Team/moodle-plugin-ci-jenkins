@@ -25,7 +25,7 @@ The library is intended for use in Jenkins declarative pipelines (although may w
 
 It should be set up as normal for a shared library in the Jenkins global settings.
 
-It provides two custom steps.
+It provides some custom steps.
 
 ## withMoodlePluginCiContainer
 
@@ -35,16 +35,40 @@ This starts up a docker container with a suitable environment for running moodle
 
 * **php**: a PHP version, e.g. 7.4
 * **db**: mysql or postgres
-* **withInstall**: command line parameters for the moodle-plugin-ci install command. If this is 
-not passed the install command will not run, but it may be empty. The following parameters are managed
-  by the step and are not permitted: db-type, db-user, db-pass, db-host
 * **withBehatServers**: chrome or firefox. This will start the relevant selenium container and the PHP
   built-in web server to allow the behat command to be run.
   
-The step also expects a code block which will be run inside the container, e.g.
+The step also expects a code block which will be run inside the container
 
-    withMoodlePluginCiContainer(php: 7.4, withInstall: '--branch MOODLE_38_STABLE --plugin plugin') {
-        sh 'moodle-plugin-ci phplint'
+### Example
+
+    withMoodlePluginCiContainer(php: 7.4, db: postgres) {
+        sh 'moodle-plugin-ci --help'
+    }
+
+The other two steps are intended to be run inside the container step.
+
+## moodlePluginCiInstall
+
+This runs the moodle-plugin-ci install command inside the container.
+
+### Parameters
+
+* command line parameters for the moodle-plugin-ci install command. The following parameters are managed
+    by the step and are not permitted: db-type, db-user, db-pass, db-host
+
+### Examples
+
+    withMoodlePluginCiContainer(php: 7.4, db: postgres) {
+        moodlePluginCiInstall('--branch MOODLE_310_STABLE --plugin plugin')
+    }
+
+Using a custom Moodle repo
+
+    withMoodlePluginCiContainer(php: 7.4, db: postgres) {
+        ssh-agent(['bitbucket-credentials']) {
+             moodlePluginCiInstall('--branch MOODLE_310_STABLE --plugin plugin --repo ssh://git@bitbucket.example.com/moodle.git')
+        }
     }
 
 ## moodlePluginCi
@@ -64,6 +88,45 @@ The result parameters are strings as supported by the Jenkins [catchError](https
 For example:
 
     moodlePluginCi 'codechecker --max-warnings 0', 'SUCCESS', 'SUCCESS'
+
+# Full pipeline example
+
+    pipeline {
+        agent any
+
+        options {
+            checkoutToSubdirectory('plugin')
+            disableConcurrentBuilds()
+        }
+
+        stages {
+
+            stage("Plugin CI") {
+
+                agent any
+
+                steps {
+
+                    withMoodlePluginCiContainer(php: '7.4') {
+
+                        moodlePluginCiInstall("--branch MOODLE_310_STABLE --plugin plugin")
+
+                        moodlePluginCi 'phplint'
+                        moodlePluginCi 'phpcpd', 'SUCCESS', 'SUCCESS'
+                        moodlePluginCi 'phpmd', 'SUCCESS', 'SUCCESS'
+                        moodlePluginCi 'codechecker --max-warnings 0', 'SUCCESS', 'SUCCESS'
+                        moodlePluginCi 'phpdoc', 'SUCCESS', 'SUCCESS'
+                        moodlePluginCi 'validate', 'SUCCESS', 'SUCCESS'
+                        moodlePluginCi 'savepoints', 'SUCCESS', 'SUCCESS'
+                        moodlePluginCi 'mustache', 'SUCCESS', 'SUCCESS'
+                        moodlePluginCi 'grunt --max-lint-warnings 0', 'SUCCESS', 'SUCCESS'
+                        moodlePluginCi 'phpunit'
+                    }
+                }
+            }
+        }
+    }
+
 
 # Workspace
 
