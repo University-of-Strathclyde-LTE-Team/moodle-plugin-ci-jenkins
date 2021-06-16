@@ -35,16 +35,38 @@ This starts up a docker container with a suitable environment for running moodle
 
 * **php**: a PHP version, e.g. 7.4
 * **db**: mysql or postgres
-* **withInstall**: command line parameters for the moodle-plugin-ci install command. If this is 
-not passed the install command will not run, but it may be empty. The following parameters are managed
-  by the step and are not permitted: db-type, db-user, db-pass, db-host
 * **withBehatServers**: chrome or firefox. This will start the relevant selenium container and the PHP
   built-in web server to allow the behat command to be run.
   
-The step also expects a code block which will be run inside the container, e.g.
+The step also expects a code block which will be run inside the container
 
-    withMoodlePluginCiContainer(php: 7.4, withInstall: '--branch MOODLE_38_STABLE --plugin plugin') {
-        sh 'moodle-plugin-ci phplint'
+### Example
+
+    withMoodlePluginCiContainer(php: 7.4, db: postgres) {
+        sh 'moodle-plugin-ci --help'
+    }
+
+## moodlePluginCiInstall
+
+This runs the moodle-plugin-ci install command inside the container.
+
+### Parameters
+
+* command line parameters for the moodle-plugin-ci install command. The following parameters are managed
+    by the step and are not permitted: db-type, db-user, db-pass, db-host
+
+### Examples
+
+    withMoodlePluginCiContainer(php: 7.4, db: postgres) {
+        moodlePluginCiInstall('--branch MOODLE_310_STABLE --plugin plugin')
+    }
+
+Using a custom Moodle repo
+
+    withMoodlePluginCiContainer(php: 7.4, db: postgres) {
+        ssh-agent(['bitbucket-credentials']) {
+             moodlePluginCiInstall('--branch MOODLE_310_STABLE --plugin plugin --repo ssh://git@bitbucket.example.com/moodle.git')
+        }
     }
 
 ## moodlePluginCi
