@@ -38,10 +38,6 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
     def db = pipelineParams.db ?: 'mysql'
     def withBehatServers = pipelineParams.withBehatServers
 
-    if (withBehatServers && !runInstall) {
-        error("withBehatServers can only be specified if install is run")
-    }
-
     if (withBehatServers) {
         if (!(withBehatServers in ['chrome', 'firefox'])) {
             error('withBehatServers must be chrome or firefox')
