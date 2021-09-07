@@ -19,6 +19,12 @@ It is currently a work in progress and contributions are very welcome!
 
 Docker must be available on the Jenkins server.
 
+The following Jenkins plugins must also be installed:
+
+* [Pipeline: Shared Groovy Libraries](https://plugins.jenkins.io/workflow-cps-global-lib/)
+* [Docker Pipeline](https://plugins.jenkins.io/docker-workflow/)
+* [Workspace cleanup](https://plugins.jenkins.io/ws-cleanup/)
+
 # Usage
 
 The library is intended for use in Jenkins declarative pipelines (although may work in other scenarios).
