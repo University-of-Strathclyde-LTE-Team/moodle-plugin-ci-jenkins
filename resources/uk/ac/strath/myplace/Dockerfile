@@ -1,4 +1,4 @@
-FROM ubuntu:20.10
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND="noninteractive"
 
@@ -7,18 +7,20 @@ RUN apt-get update && apt-get install -y unzip \
     curl git mysql-client mysql-server \
     postgresql postgresql-client \
     locales \
-    # For add-apt-repository
-    software-properties-common
+    # For add-apt-repository.
+    software-properties-common \
+    # For gyp to build node-scss.
+    python2 build-essential
 
 RUN add-apt-repository ppa:ondrej/php
 
-RUN for ver in 7.2 7.3 7.4 8.0; do apt-get install -y php$ver php$ver-curl php$ver-gd php$ver-intl \
+RUN for ver in 7.2 7.3 7.4 8.0 8.1; do apt-get install -y php$ver php$ver-curl php$ver-gd php$ver-intl \
     php$ver-mbstring php$ver-mysql php$ver-xml php$ver-zip; done \
     && update-alternatives --set php /usr/bin/php7.4
 
 # Create a real jenkins user. Git will not work correctly if the current user is just an id without a user entry.
 ARG JENKINS_USERID
-RUN useradd -m -r -u ${JENKINS_USERID} jenkins
+RUN useradd -m -r -u ${JENKINS_USERID} jenkins -p jenkins
 
 # Create a home directory for mysql so service can be started.
 RUN mkdir -p /var/lib/mysql \
