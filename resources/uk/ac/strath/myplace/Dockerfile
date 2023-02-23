@@ -8,9 +8,7 @@ RUN apt-get update && apt-get install -y unzip \
     postgresql postgresql-client \
     locales \
     # For add-apt-repository.
-    software-properties-common \
-    # For gyp to build node-scss.
-    python2 build-essential
+    software-properties-common
 
 RUN add-apt-repository ppa:ondrej/php
 
