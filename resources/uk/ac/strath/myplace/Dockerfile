@@ -18,7 +18,7 @@ RUN for ver in 7.2 7.3 7.4 8.0 8.1; do apt-get install -y php$ver php$ver-curl p
 
 # Create a real jenkins user. Git will not work correctly if the current user is just an id without a user entry.
 ARG JENKINS_USERID
-RUN useradd -m -r -u ${JENKINS_USERID} jenkins -p jenkins
+RUN useradd -m -r -u ${JENKINS_USERID} jenkins
 
 # Create a home directory for mysql so service can be started.
 RUN mkdir -p /var/lib/mysql \
@@ -53,7 +53,7 @@ RUN locale-gen en_AU.UTF-8
 # Also it's needed for the post-install step of the create project for moodle-plugin-ci
 # From https://stackoverflow.com/questions/25899912/how-to-install-nvm-in-docker
 ENV NVM_DIR /var/lib/nvm
-ENV NODE_VERSION 16.14.0
+ENV NODE_VERSION 18.12.0
 
 RUN mkdir $NVM_DIR \
     && chown jenkins:jenkins $NVM_DIR
