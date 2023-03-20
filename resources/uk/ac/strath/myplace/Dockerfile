@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y unzip \
 RUN add-apt-repository ppa:ondrej/php
 
 RUN for ver in 7.2 7.3 7.4 8.0 8.1; do apt-get install -y php$ver php$ver-curl php$ver-gd php$ver-intl \
-    php$ver-mbstring php$ver-mysql php$ver-xml php$ver-zip && echo "max_input_vars = 20000" > /etc/php/$ver/cli/conf.d/30-moodle.ini; done \
+    php$ver-mbstring php$ver-mysql php$ver-xml php$ver-zip; echo "max_input_vars = 20000" > /etc/php/$ver/cli/conf.d/30-moodle.ini; done \
     && update-alternatives --set php /usr/bin/php7.4
 
 # Create a real jenkins user. Git will not work correctly if the current user is just an id without a user entry.
