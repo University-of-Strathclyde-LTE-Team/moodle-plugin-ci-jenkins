@@ -122,17 +122,18 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
 
         // Preload env file with variables to work around withEnv not apparently being picked up by symfony.
         // This shouldn't be necessary so we should get rid of it once we understand the problem.
-        def envFile = new File("$WORKSPACE/ci/.env")
-        envFile.write "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub\n"
-        envFile << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
+        def envFile = "$WORKSPACE/ci/.env"
+        def envContent = "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub\n"
+        envContent << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
 
         if (withBehatServers) {
             sh "php -S 0.0.0.0:8000 -t ${WORKSPACE}/moodle &"
         }
 
         // Workaround for the withEnv below not appearing to work.
-        envFile.text = envFile.text.replace('MOODLE_START_BEHAT_SERVERS=YES', '')
+        envContent << "\nMOODLE_START_BEHAT_SERVERS=YES"
 
+        writeFile(file: envFile, text: envContent)
         // DB variable is required by the moodlePluginCiInstall step.
 
         // The script has a flag to prevent the servers starting but appears to override it with an environment
