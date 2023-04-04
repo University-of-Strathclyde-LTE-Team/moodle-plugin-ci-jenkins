@@ -58,6 +58,7 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
     }
 
     def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
+    def phpIniFileContents = libraryResource 'uk/ac/strath/myplace/php/php-config.ini'
 
     def buildTag = buildTag()
 
@@ -66,6 +67,7 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
     def image = null
     dir(dockerDir) {
         writeFile(file: 'Dockerfile', text: dockerFileContents)
+        writeFile(file: 'php/php-config.ini', text: phpIniFileContents)
         def jenkinsUserId = sh(script: 'id -u', returnStdout: true).trim()
         image = docker.build(buildTag, "--build-arg JENKINS_USERID=${jenkinsUserId} .")
     }
