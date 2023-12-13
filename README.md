@@ -43,6 +43,7 @@ This starts up a docker container with a suitable environment for running moodle
 * **db**: mysql or postgres
 * **withBehatServers**: chrome or firefox. This will start the relevant selenium container and the PHP
   built-in web server to allow the behat command to be run.
+* **ciVersion** the version of moodle-plugin-ci to use
   
 The step also expects a code block which will be run inside the container
 
@@ -113,7 +114,7 @@ For example:
 
                 steps {
 
-                    withMoodlePluginCiContainer(php: '7.4') {
+                    withMoodlePluginCiContainer(php: '7.4', ciVersion: '4') {
 
                         moodlePluginCiInstall("--branch MOODLE_310_STABLE --plugin plugin")
 

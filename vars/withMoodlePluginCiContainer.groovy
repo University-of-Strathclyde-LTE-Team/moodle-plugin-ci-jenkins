@@ -36,6 +36,7 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
 
     def php = pipelineParams.php ?: '7.2'
     def db = pipelineParams.db ?: 'mysql'
+    def ciVersion = pipelineParams.ciVersion ?: '3';
     def withBehatServers = pipelineParams.withBehatServers
 
     if (withBehatServers) {
@@ -119,7 +120,7 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
 
         withEnv(installEnv) {
             // Install plugin ci.
-            sh 'composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3'
+            sh "composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^${ciVersion}"
         }
 
         // Preload env file with variables to work around withEnv not apparently being picked up by symfony.
