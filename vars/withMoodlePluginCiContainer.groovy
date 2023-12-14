@@ -34,7 +34,7 @@ private def buildTag() {
 
 private def runContainers(Map pipelineParams = [:], Closure body) {
 
-    def php = pipelineParams.php ?: '7.2'
+    def php = pipelineParams.php ?: '7.4'
     def db = pipelineParams.db ?: 'mysql'
     def withBehatServers = pipelineParams.withBehatServers
 
