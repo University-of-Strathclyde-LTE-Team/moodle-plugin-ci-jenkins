@@ -20,7 +20,6 @@ def call(Map pipelineParams = [:], Closure body) {
         sh "docker rmi --no-prune ${buildTag} || true"
     }
 
-
 }
 
 private def buildTag() {
