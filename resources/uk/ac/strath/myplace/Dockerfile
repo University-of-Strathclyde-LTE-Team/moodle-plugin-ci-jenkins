@@ -74,7 +74,7 @@ USER jenkins
 # Install NVM and grunt-cli
 RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash \
     && . $NVM_DIR/nvm.sh \
-    && nvm install --lts \
+    && nvm install lts/carbon \
     && npm install -g grunt-cli
 
 USER postgres
