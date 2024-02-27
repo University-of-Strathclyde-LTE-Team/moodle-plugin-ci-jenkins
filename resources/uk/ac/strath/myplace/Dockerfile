@@ -65,25 +65,17 @@ RUN locale-gen en_AU.UTF-8
 # Also it's needed for the post-install step of the create project for moodle-plugin-ci
 # From https://stackoverflow.com/questions/25899912/how-to-install-nvm-in-docker
 ENV NVM_DIR /var/lib/nvm
-ENV NODE_VERSION 16.19.1
 
 RUN mkdir $NVM_DIR \
     && chown jenkins:jenkins $NVM_DIR
 
 USER jenkins
 
-# Install NVM
-RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash \
+# Install NVM and grunt-cli
+RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash \
     && . $NVM_DIR/nvm.sh \
-    && nvm install $NODE_VERSION \
-    && nvm alias default $NODE_VERSION \
-    && nvm use default
-
-ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
-ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
-
-# Install grunt CLI.
-RUN npm install -g grunt-cli
+    && nvm install --lts \
+    && npm install -g grunt-cli
 
 USER postgres
 # Create jenkins user. There's probably a better way to do this.
