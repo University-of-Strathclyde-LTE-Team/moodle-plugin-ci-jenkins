@@ -65,6 +65,7 @@ RUN locale-gen en_AU.UTF-8
 # Also it's needed for the post-install step of the create project for moodle-plugin-ci
 # From https://stackoverflow.com/questions/25899912/how-to-install-nvm-in-docker
 ENV NVM_DIR /var/lib/nvm
+ENV PATH="${PATH}:${NVM_DIR}"
 
 RUN mkdir $NVM_DIR \
     && chown jenkins:jenkins $NVM_DIR
