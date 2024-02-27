@@ -118,7 +118,7 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
         }
 
         withEnv(installEnv) {
-            sh ". \$NVM_DIR/nvm.sh && nvm use default && \
+            sh ". \$NVM_DIR/nvm.sh >/dev/null && nvm use default && \
                 composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^${ciVersion}"
         }
 
