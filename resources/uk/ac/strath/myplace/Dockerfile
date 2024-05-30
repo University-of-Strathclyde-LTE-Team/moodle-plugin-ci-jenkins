@@ -24,8 +24,9 @@ ADD php/php-config.ini /etc/php/8.1/cli/conf.d/10-docker-php-ext-strath.ini
 ADD php/php-config.ini /etc/php/8.2/apache2/conf.d/10-docker-php-ext-strath.ini
 ADD php/php-config.ini /etc/php/8.2/cli/conf.d/10-docker-php-ext-strath.ini
 
-RUN for ver in 7.4 8.0 8.1 8.2; do apt-get install -y php$ver php$ver-curl php$ver-gd php$ver-intl \
-    php$ver-mbstring php$ver-mysql php$ver-xml php$ver-zip; done \
+RUN for ver in 7.4 8.0 8.1 8.2; do apt-get update && \
+    apt-get install -y php$ver php$ver-curl php$ver-gd php$ver-intl \
+    php$ver-mbstring php$ver-mysql php$ver-pgsql php$ver-xml php$ver-zip; done \
     && update-alternatives --set php /usr/bin/php$ver
 
 # Create a real jenkins user. Git will not work correctly if the current user is just an id without a user entry.
@@ -81,6 +82,7 @@ USER postgres
 # Create jenkins user. There's probably a better way to do this.
 RUN service postgresql start \
     && createuser -s -i -d -r -l -w jenkins \
+    && createdb -O jenkins jenkins \
     && psql -c "ALTER ROLE jenkins WITH PASSWORD 'jenkins';"
 
 USER jenkins
