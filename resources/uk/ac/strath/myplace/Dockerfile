@@ -23,8 +23,12 @@ ADD php/php-config.ini /etc/php/8.1/apache2/conf.d/10-docker-php-ext-strath.ini
 ADD php/php-config.ini /etc/php/8.1/cli/conf.d/10-docker-php-ext-strath.ini
 ADD php/php-config.ini /etc/php/8.2/apache2/conf.d/10-docker-php-ext-strath.ini
 ADD php/php-config.ini /etc/php/8.2/cli/conf.d/10-docker-php-ext-strath.ini
+ADD php/php-config.ini /etc/php/8.3/apache2/conf.d/10-docker-php-ext-strath.ini
+ADD php/php-config.ini /etc/php/8.3/cli/conf.d/10-docker-php-ext-strath.ini
+ADD php/php-config.ini /etc/php/8.4/apache2/conf.d/10-docker-php-ext-strath.ini
+ADD php/php-config.ini /etc/php/8.4/cli/conf.d/10-docker-php-ext-strath.ini
 
-RUN for ver in 7.4 8.0 8.1 8.2; do apt-get install -y php$ver php$ver-curl php$ver-gd php$ver-intl \
+RUN for ver in 7.4 8.0 8.1 8.2 8.3 8.4; do apt-get install -y php$ver php$ver-curl php$ver-gd php$ver-intl \
     php$ver-mbstring php$ver-mysql php$ver-xml php$ver-zip; done \
     && update-alternatives --set php /usr/bin/php$ver
 
