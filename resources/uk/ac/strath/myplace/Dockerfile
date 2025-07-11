@@ -55,7 +55,7 @@ RUN rm -rf /var/lib/apt/lists/*
 # Install composer.
 ENV COMPOSER_HOME /composer
 RUN mkdir $COMPOSER_HOME && chmod 777 $COMPOSER_HOME
-RUN curl https://getcomposer.org/download/2.0.11/composer.phar -o composer.phar \
+RUN curl https://getcomposer.org/download/2.8.10/composer.phar -o composer.phar \
     && chmod +x composer.phar \
     && mv composer.phar /usr/local/bin/composer
 
