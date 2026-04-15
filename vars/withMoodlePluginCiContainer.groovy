@@ -1,149 +1,183 @@
-def call(Map pipelineParams = [:], Closure body) {
+// NOTE: concurrent builds of the same branch are not supported. Each build uses the
+// branch's Jenkins workspace directory, and running two builds simultaneously would
+// cause them to interfere. Disable concurrent builds in the job configuration.
+def call(Map params = [:], Closure body) {
+    def phpVersion       = params.php ?: '8.3'
+    def db               = params.db ?: 'mysql'
+    def ciVersion        = params.ciVersion ?: '4'
+    def withBehatServers = params.withBehatServers
 
-    def buildTag = buildTag()
+    if (withBehatServers && !(withBehatServers in ['chrome', 'firefox'])) {
+        error("withBehatServers must be 'chrome' or 'firefox'")
+    }
+
+    def dbType
+    switch (db) {
+        case 'mysql':    dbType = 'mysqli'; break
+        case 'postgres': dbType = 'pgsql';  break
+        default:         error("Unsupported db '${db}'. Use 'mysql' or 'postgres'.")
+    }
+
+    def network           = UUID.randomUUID().toString()
+    def dbContainer       = "${network}-db"
+    def seleniumContainer = "${network}-selenium"
 
     try {
-        runContainers(pipelineParams, body)
+        sh "docker network create '${network}'"
+
+        startDatabase(db, dbContainer, network)
+
+        if (withBehatServers) {
+            sh """
+                docker run -d \
+                    --name '${seleniumContainer}' \
+                    --network '${network}' \
+                    --network-alias selenium \
+                    --shm-size=2g \
+                    selenium/standalone-${withBehatServers}:latest
+            """
+        }
+
+        sh 'mkdir -p "$WORKSPACE/.home"'
+
+        docker.image("moodlehq/moodle-php-apache:${phpVersion}").inside(
+            "--entrypoint '' " +
+            "--network '${network}' " +
+            "--network-alias moodle " +
+            "-e HOME=\$WORKSPACE/.home"
+        ) {
+            sh 'curl -sS https://getcomposer.org/installer | php -- --install-dir="$WORKSPACE" --filename=composer'
+
+            sh '''
+                mkdir -p "$WORKSPACE/.nvm"
+                export NVM_DIR="$WORKSPACE/.nvm"
+                # PROFILE=/dev/null prevents the installer appending nvm bootstrap lines to
+                # any shell rc file — we source nvm.sh manually each time instead.
+                # The variable must be set on bash (which runs the install script), not on
+                # curl, hence the placement after the pipe.
+                curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | PROFILE=/dev/null bash
+                # Suppress the noisy nvm.sh source output, then restore echoing afterwards.
+                set +x
+                . "$NVM_DIR/nvm.sh"
+                set -x
+                nvm install --lts
+            '''
+
+            sh """
+                export PATH="\$WORKSPACE:\$PATH"
+                export NVM_DIR="\$WORKSPACE/.nvm"
+                set +x
+                . "\$NVM_DIR/nvm.sh"
+                set -x
+                # Remove any previous installation so composer create-project starts clean.
+                rm -rf "\$WORKSPACE/ci"
+                composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^${ciVersion}
+            """
+
+            def toolPaths = sh(script: '''
+                set +x
+                export NVM_DIR="$WORKSPACE/.nvm"
+                . "$NVM_DIR/nvm.sh"
+                printf '%s/ci/bin:%s:%s' "$WORKSPACE" "$(dirname $(which node))" "$WORKSPACE"
+            ''', returnStdout: true).trim()
+
+            def envVars = [
+                "PATH+MOODLE_CI=${toolPaths}",
+                "DB=${dbType}",
+                "MOODLE_CI_DB_HOST=db",
+                "MOODLE_CI_DB_USER=moodle",
+                "MOODLE_CI_DB_PASS=moodle",
+                // Prevent moodle-plugin-ci from attempting to start its own servers.
+                "MOODLE_START_BEHAT_SERVERS=false",
+            ]
+
+            if (withBehatServers) {
+                envVars += [
+                    "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub",
+                    "MOODLE_BEHAT_WWWROOT=http://moodle:8000",
+                ]
+            }
+
+            withEnv(envVars) {
+                body()
+            }
+        }
     } finally {
-        cleanWs deleteDirs: true, notFailBuild: true, patterns: [
-            [pattern: ".composer/**", type: 'EXCLUDE'],
-            [pattern: ".npm/**", type: 'EXCLUDE']
-        ]
-
-        // Use "|| true" to prevent cleanup failing job.
-        if (pipelineParams.withBehatServers) {
-            sh "docker stop ${buildTag}-selenium || true"
+        sh "docker stop '${dbContainer}' || true"
+        sh "docker rm -v '${dbContainer}' || true"
+        if (withBehatServers) {
+            sh "docker stop '${seleniumContainer}' || true"
+            sh "docker rm -v '${seleniumContainer}' || true"
         }
-
-        sh "docker network rm ${buildTag} || true"
-        // No prune is very important or all intermediate images will be removed on first build!
-        sh "docker rmi --no-prune ${buildTag} || true"
+        sh "docker network rm '${network}' || true"
+        cleanWs()
     }
-
 }
 
-private def buildTag() {
-        // Docker does not like upper case letters in tags.
-        def buildTag = "${BUILD_TAG}".toLowerCase()
-
-        // The BUILD_TAG documentation says slashes are replaced by dashes but this seems to be wrong (in Jenkins 2.263.4)
-        buildTag = buildTag.replace('%2f', '-')
-        return buildTag
-}
-
-private def runContainers(Map pipelineParams = [:], Closure body) {
-
-    def php = pipelineParams.php ?: '7.4'
-    def db = pipelineParams.db ?: 'mysql'
-    def ciVersion = pipelineParams.ciVersion ?: '3';
-    def withBehatServers = pipelineParams.withBehatServers
-
-    if (withBehatServers) {
-        if (!(withBehatServers in ['chrome', 'firefox'])) {
-            error('withBehatServers must be chrome or firefox')
-        }
-    }
-
-    // Validate the database value before building the image.
-    def installDb = null
+private void startDatabase(String db, String containerName, String network) {
     switch (db) {
         case 'mysql':
-            installDb = 'mysqli'
+            sh """
+                docker run -d \
+                    --name '${containerName}' \
+                    --network '${network}' \
+                    --network-alias db \
+                    -e MYSQL_ROOT_PASSWORD=moodle \
+                    --tmpfs /var/lib/mysql:rw,noexec,nosuid \
+                    mysql:8.4
+            """
+            // moodle-plugin-ci creates the database itself, so we start MySQL without
+            // MYSQL_DATABASE and grant the moodle user global privileges instead.
+            // We poll with docker exec rather than Docker health checks because we need
+            // to create the DB user immediately after MySQL accepts connections; health
+            // checks would still require a polling loop and split setup into two phases.
+            sh """
+                ready=0
+                for i in \$(seq 1 30); do
+                    if docker exec '${containerName}' mysql -uroot -pmoodle -e 'SELECT 1' >/dev/null 2>&1; then
+                        docker exec '${containerName}' mysql -uroot -pmoodle \
+                            -e "CREATE USER 'moodle'@'%' IDENTIFIED BY 'moodle'; GRANT ALL ON *.* TO 'moodle'@'%'; FLUSH PRIVILEGES;"
+                        echo 'MySQL ready.'
+                        ready=1
+                        break
+                    fi
+                    echo "Waiting for MySQL (\${i}/30)..."
+                    sleep 2
+                done
+                if [ \$ready -eq 0 ]; then
+                    echo 'MySQL did not become ready after 60 seconds.' >&2
+                    exit 1
+                fi
+            """
             break
         case 'postgres':
-            installDb = 'pgsql'
+            sh """
+                docker run -d \
+                    --name '${containerName}' \
+                    --network '${network}' \
+                    --network-alias db \
+                    -e POSTGRES_USER=moodle \
+                    -e POSTGRES_PASSWORD=moodle \
+                    --tmpfs /var/lib/postgresql/data:rw,noexec,nosuid \
+                    postgres:16
+            """
+            // Same polling approach as MySQL — see comment above.
+            sh """
+                ready=0
+                for i in \$(seq 1 30); do
+                    if docker exec '${containerName}' pg_isready -U moodle >/dev/null 2>&1; then
+                        echo 'PostgreSQL ready.'
+                        ready=1
+                        break
+                    fi
+                    echo "Waiting for PostgreSQL (\${i}/30)..."
+                    sleep 2
+                done
+                if [ \$ready -eq 0 ]; then
+                    echo 'PostgreSQL did not become ready after 60 seconds.' >&2
+                    exit 1
+                fi
+            """
             break
-        default:
-            error("Unknown db type ${db}. Supported types: mysqli, postgres")
     }
-
-    def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
-    def phpIniFileContents = libraryResource 'uk/ac/strath/myplace/php/php-config.ini'
-
-    def buildTag = buildTag()
-
-    // Create Dockerfile in its own directory to prevent unnecessary context being sent.
-    def dockerDir = "${buildTag}-docker"
-    def image = null
-    dir(dockerDir) {
-        writeFile(file: 'Dockerfile', text: dockerFileContents)
-        writeFile(file: 'php/php-config.ini', text: phpIniFileContents)
-        def jenkinsUserId = sh(script: 'id -u', returnStdout: true).trim()
-        image = docker.build(buildTag, "--build-arg JENKINS_USERID=${jenkinsUserId} .")
-    }
-
-    // Create composer and npm cache directories if they don't exist.
-    sh 'mkdir -p ${WORKSPACE}/.npm && chmod 777 ${WORKSPACE}/.npm \
-            && mkdir -p ${WORKSPACE}/.composer && chmod 777 ${WORKSPACE}/.composer'
-
-    sh "docker network create ${buildTag}"
-
-    if (withBehatServers) {
-        // We have checked earlier that it's either chrome or firefox.
-        def seleniumImage = 'selenium/standalone-chrome:3'
-        if (withBehatServers == 'firefox') {
-            seleniumImage = 'selenium/standalone-firefox:3.141.59'
-        }
-        sh "docker run -d --rm --name=${buildTag}-selenium --network=${buildTag} --network-alias=selenium --shm-size=2g ${seleniumImage}"
-    }
-
-    // Nasty hack to get around the fact that we can't use withEnv to change the PATH on a container
-    // (or any other method as far as I can see)
-    // https://issues.jenkins.io/browse/JENKINS-49076
-    def originalDockerPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-    def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
-
-    image.inside("-e PATH=${pathOnDocker} --network ${buildTag} --network-alias=moodle") {
-
-        // Start database.
-        switch (db) {
-            case 'mysql':
-                sh 'sudo service mysql start'
-                break
-            case 'postgres':
-                sh 'sudo service postgresql start'
-                break
-            default:
-                error("Unknown db type ${db}. Supported types: mysql, postgres")
-        }
-
-        sh "sudo update-alternatives --set php /usr/bin/php${php}"
-
-        // Set composer and npm directories to allow caching of downloads between jobs.
-        def installEnv = ["npm_config_cache=${WORKSPACE}/.npm", "COMPOSER_CACHE_DIR=${WORKSPACE}/.composer"]
-
-        if (withBehatServers) {
-            installEnv << "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub"
-            installEnv << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
-        }
-
-        withEnv(installEnv) {
-            sh ". \$NVM_DIR/nvm.sh >/dev/null && nvm use default && \
-                composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^${ciVersion}"
-        }
-
-        // Preload env file with variables to work around withEnv not apparently being picked up by symfony.
-        // This shouldn't be necessary so we should get rid of it once we understand the problem.
-        def envFile = "$WORKSPACE/ci/.env"
-        def envContent = "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub\n"
-        envContent << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
-
-        if (withBehatServers) {
-            sh "php -S 0.0.0.0:8000 -t ${WORKSPACE}/moodle &"
-        }
-
-        // Workaround for the withEnv below not appearing to work.
-        envContent << "\nMOODLE_START_BEHAT_SERVERS=YES"
-
-        writeFile(file: envFile, text: envContent)
-        // DB variable is required by the moodlePluginCiInstall step.
-
-        // The script has a flag to prevent the servers starting but appears to override it with an environment
-        // variable if the plugin has behat tests (in TestSuiteInstaller::getBehatInstallProcesses())
-        withEnv(["DB=${installDb}", "MOODLE_START_BEHAT_SERVERS=false"]) {
-            body()
-        }
-
-    }
-
 }
