@@ -101,6 +101,7 @@ def call(Map params = [:], Closure body) {
                 envVars += [
                     "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub",
                     "MOODLE_BEHAT_WWWROOT=http://moodle:8000",
+                    "MOODLE_BEHAT_DEFAULT_BROWSER=${withBehatServers}",
                 ]
             }
 
