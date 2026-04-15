@@ -22,6 +22,9 @@ def call(Map params = [:], Closure body) {
     def dbContainer       = "${network}-db"
     def seleniumContainer = "${network}-selenium"
 
+    // We call the docker binary directly below rather than using the Docker Pipeline
+    // Plugin's Groovy API. The docker-workflow plugin (declared as a requirement in
+    // the README) requires the binary to be on PATH anyway, so this is a safe assumption.
     try {
         sh "docker network create '${network}'"
 
