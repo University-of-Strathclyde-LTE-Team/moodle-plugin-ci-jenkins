@@ -26,7 +26,10 @@ def call(String command = '') {
     }
     installCommand << command
 
-    sh installCommand.join(' ')
+    sh """
+        export PATH="\$MOODLE_CI_TOOL_PATHS:\$PATH"
+        ${installCommand.join(' ')}
+    """
 
     // If MOODLE_BEHAT_WWWROOT is set, withMoodlePluginCiContainer has provided a Selenium
     // container and expects us to provide the web server now that Moodle has been checked

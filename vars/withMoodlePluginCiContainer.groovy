@@ -56,11 +56,12 @@ def call(Map params = [:], Closure body) {
                 # The variable must be set on bash (which runs the install script), not on
                 # curl, hence the placement after the pipe.
                 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | PROFILE=/dev/null bash
-                # Suppress the noisy nvm.sh source output, then restore echoing afterwards.
+                # set +x suppresses noisy shell-function traces from both nvm.sh and
+                # nvm install — NVM is heavily function-based so set -x floods the log.
                 set +x
                 . "$NVM_DIR/nvm.sh"
-                set -x
                 nvm install --lts
+                set -x
             '''
 
             sh """
@@ -81,8 +82,11 @@ def call(Map params = [:], Closure body) {
                 printf '%s/ci/bin:%s:%s' "$WORKSPACE" "$(dirname $(which node))" "$WORKSPACE"
             ''', returnStdout: true).trim()
 
+            // JENKINS-49076: withEnv cannot reliably update PATH inside docker.image().inside()
+            // because the container's own PATH env takes precedence. We store the tool paths
+            // in a separate env var and each step that needs them prepends it to PATH itself.
             def envVars = [
-                "PATH+MOODLE_CI=${toolPaths}",
+                "MOODLE_CI_TOOL_PATHS=${toolPaths}",
                 "DB=${dbType}",
                 "MOODLE_CI_DB_HOST=db",
                 "MOODLE_CI_DB_USER=moodle",
