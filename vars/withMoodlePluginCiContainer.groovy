@@ -2,10 +2,9 @@
 // branch's Jenkins workspace directory, and running two builds simultaneously would
 // cause them to interfere. Disable concurrent builds in the job configuration.
 
-// Update this when a new NVM release is available: https://github.com/nvm-sh/nvm/releases
-private static final String NVM_VERSION = 'v0.40.4'
-
 def call(Map params = [:], Closure body) {
+    // Update this when a new NVM release is available: https://github.com/nvm-sh/nvm/releases
+    def nvmVersion = 'v0.40.4'
     def phpVersion      = params.php ?: '8.3'
     def db              = params.db ?: 'mysql'
     def ciVersion       = params.ciVersion ?: '^4'
@@ -68,7 +67,7 @@ def call(Map params = [:], Closure body) {
                 # any shell rc file — we source nvm.sh manually each time instead.
                 # The variable must be set on bash (which runs the install script), not on
                 # curl, hence the placement after the pipe.
-                curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | PROFILE=/dev/null bash
+                curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${nvmVersion}/install.sh | PROFILE=/dev/null bash
                 # set +x suppresses noisy shell-function traces from both nvm.sh and
                 # nvm install — NVM is heavily function-based so set -x floods the log.
                 set +x
