@@ -20,16 +20,13 @@ def call(String command = '') {
         }
     }
 
-    def installCommand = ['moodle-plugin-ci install']
+    def installCommand = ["\$WORKSPACE/ci/bin/moodle-plugin-ci install"]
     installParams.each { key, val ->
         installCommand << "--${key} ${val}"
     }
     installCommand << command
 
-    sh """
-        export PATH="\$MOODLE_CI_TOOL_PATHS:\$PATH"
-        ${installCommand.join(' ')}
-    """
+    sh installCommand.join(' ')
 
     // If MOODLE_BEHAT_WWWROOT is set, withMoodlePluginCiContainer has provided a Selenium
     // container and expects us to provide the web server now that Moodle has been checked

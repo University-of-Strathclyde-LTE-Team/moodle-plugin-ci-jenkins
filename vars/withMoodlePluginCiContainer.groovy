@@ -69,27 +69,22 @@ def call(Map params = [:], Closure body) {
             '''
 
             sh """
-                export PATH="\$WORKSPACE:\$PATH"
                 export NVM_DIR="\$WORKSPACE/.nvm"
                 set +x
                 . "\$NVM_DIR/nvm.sh"
                 set -x
                 # Remove any previous installation so composer create-project starts clean.
                 rm -rf "\$WORKSPACE/ci"
-                composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ${ciVersion}
+                "\$WORKSPACE/composer" create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ${ciVersion}
             """
 
             // Node version management is handled entirely by moodle-plugin-ci via NVM:
             // during install its VendorInstaller reads Moodle's .nvmrc, installs the correct
             // version, and writes RUNTIME_NVM_BIN to ci/.env for use by grunt etc.
-            // We only need ci/bin (moodle-plugin-ci itself) and WORKSPACE (composer) in PATH.
-            def toolPaths = "${env.WORKSPACE}/ci/bin:${env.WORKSPACE}"
-
-            // JENKINS-49076: withEnv cannot reliably update PATH inside docker.image().inside()
-            // because the container's own PATH env takes precedence. We store the tool paths
-            // in a separate env var and each step that needs them prepends it to PATH itself.
+            // moodlePluginCi and moodlePluginCiInstall invoke moodle-plugin-ci via the full
+            // path $WORKSPACE/ci/bin/moodle-plugin-ci to avoid JENKINS-49076 (PATH updates
+            // via withEnv are unreliable inside docker.image().inside()).
             def envVars = [
-                "MOODLE_CI_TOOL_PATHS=${toolPaths}",
                 // NVM_DIR must be set so moodle-plugin-ci's VendorInstaller can find NVM,
                 // read Moodle's .nvmrc, and install the correct Node version.
                 "NVM_DIR=${env.WORKSPACE}/.nvm",
