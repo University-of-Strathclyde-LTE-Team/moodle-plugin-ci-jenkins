@@ -47,9 +47,10 @@
   `selenium/standalone-${browser}:latest` makes builds non-reproducible. Add a
   `seleniumVersion` parameter with a pinned default.
 
-- [ ] **`nvm install --lts` may download an unused Node version** (`withMoodlePluginCiContainer.groovy`)
-  Verify whether moodle-plugin-ci's composer post-install script runs npm before
-  VendorInstaller switches to the .nvmrc version. If not, replace with `nvm --version`.
+- [x] **`nvm install --lts` may download an unused Node version** (`withMoodlePluginCiContainer.groovy`)
+  Confirmed necessary: moodle-plugin-ci's composer post-install hook runs
+  `npm install` in moodle-local_ci (which has no .nvmrc), so an active Node
+  version must exist before composer create-project runs.
 
 - [ ] **`moodlePluginCiInstall` error message always lists all params** (`moodlePluginCiInstall.groovy`)
   When a forbidden param is found the error always says all four param names. Report just

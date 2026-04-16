@@ -14,10 +14,9 @@ def call(String command = '') {
         "db-pass": env.MOODLE_CI_DB_PASS ?: 'moodle',
     ]
 
-    installParams.each { key, val ->
-        if (command.contains('--' + key)) {
-            error("The following parameters cannot be passed: db-type, db-user, db-pass, db-host")
-        }
+    def forbidden = installParams.keySet().findAll { command.contains('--' + it) }
+    if (forbidden) {
+        error("The following parameters are managed automatically and cannot be passed: ${forbidden.collect { '--' + it }.join(', ')}")
     }
 
     def installCommand = ["\$WORKSPACE/ci/bin/moodle-plugin-ci install"]
