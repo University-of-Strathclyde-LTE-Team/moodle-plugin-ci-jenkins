@@ -9,11 +9,12 @@ def call(Map params = [:], Closure body) {
     def phpVersion      = params.php ?: '8.3'
     def db              = params.db ?: 'mysql'
     def ciVersion       = params.ciVersion ?: '^4'
-    def browser         = params.browser
+    def browser          = params.browser
+    def seleniumVersion  = params.seleniumVersion ?: '4'
     // Pin to current major versions — update these when Moodle requires a newer version.
     // See https://hub.docker.com/_/mysql and https://hub.docker.com/_/postgres for releases.
-    def mysqlVersion    = params.mysqlVersion ?: '8.4'
-    def postgresVersion = params.postgresVersion ?: '16'
+    def mysqlVersion     = params.mysqlVersion ?: '8.4'
+    def postgresVersion  = params.postgresVersion ?: '16'
 
     if (browser && !(browser in ['chrome', 'firefox'])) {
         error("browser must be 'chrome' or 'firefox'")
@@ -45,7 +46,7 @@ def call(Map params = [:], Closure body) {
                     --network '${network}' \
                     --network-alias selenium \
                     --shm-size=2g \
-                    selenium/standalone-${browser}:latest
+                    selenium/standalone-${browser}:${seleniumVersion}
             """
         }
 
