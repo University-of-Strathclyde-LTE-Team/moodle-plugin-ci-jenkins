@@ -2,10 +2,14 @@
 // branch's Jenkins workspace directory, and running two builds simultaneously would
 // cause them to interfere. Disable concurrent builds in the job configuration.
 def call(Map params = [:], Closure body) {
-    def phpVersion = params.php ?: '8.3'
-    def db         = params.db ?: 'mysql'
-    def ciVersion  = params.ciVersion ?: '^4'
-    def browser    = params.browser
+    def phpVersion      = params.php ?: '8.3'
+    def db              = params.db ?: 'mysql'
+    def ciVersion       = params.ciVersion ?: '^4'
+    def browser         = params.browser
+    // Pin to current major versions — update these when Moodle requires a newer version.
+    // See https://hub.docker.com/_/mysql and https://hub.docker.com/_/postgres for releases.
+    def mysqlVersion    = params.mysqlVersion ?: '8.4'
+    def postgresVersion = params.postgresVersion ?: '16'
 
     if (browser && !(browser in ['chrome', 'firefox'])) {
         error("browser must be 'chrome' or 'firefox'")
@@ -28,7 +32,7 @@ def call(Map params = [:], Closure body) {
     try {
         sh "docker network create '${network}'"
 
-        startDatabase(db, dbContainer, network)
+        startDatabase(db, dbContainer, network, mysqlVersion, postgresVersion)
 
         if (browser) {
             sh """
@@ -123,7 +127,7 @@ def call(Map params = [:], Closure body) {
     }
 }
 
-private void startDatabase(String db, String containerName, String network) {
+private void startDatabase(String db, String containerName, String network, String mysqlVersion, String postgresVersion) {
     switch (db) {
         case 'mysql':
             sh """
@@ -133,7 +137,7 @@ private void startDatabase(String db, String containerName, String network) {
                     --network-alias db \
                     -e MYSQL_ROOT_PASSWORD=moodle \
                     --tmpfs /var/lib/mysql:rw,noexec,nosuid \
-                    mysql:8.4
+                    mysql:${mysqlVersion}
             """
             // moodle-plugin-ci creates the database itself, so we start MySQL without
             // MYSQL_DATABASE and grant the moodle user global privileges instead.
@@ -168,7 +172,7 @@ private void startDatabase(String db, String containerName, String network) {
                     -e POSTGRES_USER=moodle \
                     -e POSTGRES_PASSWORD=moodle \
                     --tmpfs /var/lib/postgresql/data:rw,noexec,nosuid \
-                    postgres:16
+                    postgres:${postgresVersion}
             """
             // Same polling approach as MySQL — see comment above.
             sh """
