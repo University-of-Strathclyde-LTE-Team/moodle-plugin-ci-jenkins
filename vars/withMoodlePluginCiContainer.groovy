@@ -57,7 +57,7 @@ def call(Map params = [:], Closure body) {
             "--network-alias moodle " +
             "-e HOME=\$WORKSPACE/.home"
         ) {
-            sh 'mkdir -p "$WORKSPACE/bin" && curl -sS https://getcomposer.org/installer | php -- --install-dir="$WORKSPACE/bin" --filename=composer'
+            sh 'mkdir -p "$WORKSPACE/bin" && curl -fsS https://getcomposer.org/installer | php -- --install-dir="$WORKSPACE/bin" --filename=composer'
             sh '"$WORKSPACE/bin/composer" --version'
 
             sh '''
@@ -67,7 +67,7 @@ def call(Map params = [:], Closure body) {
                 # any shell rc file — we source nvm.sh manually each time instead.
                 # The variable must be set on bash (which runs the install script), not on
                 # curl, hence the placement after the pipe.
-                curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${nvmVersion}/install.sh | PROFILE=/dev/null bash
+                curl -fsSo- https://raw.githubusercontent.com/nvm-sh/nvm/${nvmVersion}/install.sh | PROFILE=/dev/null bash
                 # set +x suppresses noisy shell-function traces from both nvm.sh and
                 # nvm install — NVM is heavily function-based so set -x floods the log.
                 set +x
