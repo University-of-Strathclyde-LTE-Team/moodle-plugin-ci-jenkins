@@ -4,7 +4,7 @@
 def call(Map params = [:], Closure body) {
     def phpVersion = params.php ?: '8.3'
     def db         = params.db ?: 'mysql'
-    def ciVersion  = params.ciVersion ?: '4'
+    def ciVersion  = params.ciVersion ?: '^4'
     def browser    = params.browser
 
     if (browser && !(browser in ['chrome', 'firefox'])) {
@@ -76,7 +76,7 @@ def call(Map params = [:], Closure body) {
                 set -x
                 # Remove any previous installation so composer create-project starts clean.
                 rm -rf "\$WORKSPACE/ci"
-                composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^${ciVersion}
+                composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ${ciVersion}
             """
 
             // Node version management is handled entirely by moodle-plugin-ci via NVM:
