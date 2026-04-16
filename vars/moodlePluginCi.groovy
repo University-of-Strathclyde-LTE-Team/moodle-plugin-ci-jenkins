@@ -1,5 +1,6 @@
 def call(command, stageResult = null, buildResult = null) {
     def shCommand = """
+        export PATH="\$WORKSPACE_BIN:\$PATH"
         \$WORKSPACE/ci/bin/moodle-plugin-ci ${command}
     """
     if (stageResult == null && buildResult == null) {

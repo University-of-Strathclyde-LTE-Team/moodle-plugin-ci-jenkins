@@ -49,8 +49,8 @@ def call(Map params = [:], Closure body) {
             "--network-alias moodle " +
             "-e HOME=\$WORKSPACE/.home"
         ) {
-            sh 'curl -sS https://getcomposer.org/installer | php -- --install-dir="$WORKSPACE" --filename=composer'
-            sh '"$WORKSPACE/composer" --version'
+            sh 'curl -sS https://getcomposer.org/installer | php -- --install-dir="$WORKSPACE/bin" --filename=composer'
+            sh '"$WORKSPACE/bin/composer" --version'
 
             sh '''
                 mkdir -p "$WORKSPACE/.nvm"
@@ -75,16 +75,19 @@ def call(Map params = [:], Closure body) {
                 set -x
                 # Remove any previous installation so composer create-project starts clean.
                 rm -rf "\$WORKSPACE/ci"
-                "\$WORKSPACE/composer" create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ${ciVersion}
+                "\$WORKSPACE/bin/composer" create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ${ciVersion}
             """
 
             // Node version management is handled entirely by moodle-plugin-ci via NVM:
             // during install its VendorInstaller reads Moodle's .nvmrc, installs the correct
             // version, and writes RUNTIME_NVM_BIN to ci/.env for use by grunt etc.
-            // moodlePluginCi and moodlePluginCiInstall invoke moodle-plugin-ci via the full
-            // path $WORKSPACE/ci/bin/moodle-plugin-ci to avoid JENKINS-49076 (PATH updates
-            // via withEnv are unreliable inside docker.image().inside()).
+            // $WORKSPACE/bin is added to PATH so that third-party tools installed there
+            // (currently just composer) are available to moodle-plugin-ci internally.
+            // moodlePluginCi and moodlePluginCiInstall invoke moodle-plugin-ci itself via the
+            // full path $WORKSPACE/ci/bin/moodle-plugin-ci to avoid JENKINS-49076 (PATH
+            // updates via withEnv are unreliable inside docker.image().inside()).
             def envVars = [
+                "WORKSPACE_BIN=${env.WORKSPACE}/bin",
                 // NVM_DIR must be set so moodle-plugin-ci's VendorInstaller can find NVM,
                 // read Moodle's .nvmrc, and install the correct Node version.
                 "NVM_DIR=${env.WORKSPACE}/.nvm",
