@@ -50,6 +50,7 @@ def call(Map params = [:], Closure body) {
             "-e HOME=\$WORKSPACE/.home"
         ) {
             sh 'curl -sS https://getcomposer.org/installer | php -- --install-dir="$WORKSPACE" --filename=composer'
+            sh '"$WORKSPACE/composer" --version'
 
             sh '''
                 mkdir -p "$WORKSPACE/.nvm"
