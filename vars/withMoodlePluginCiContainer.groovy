@@ -49,7 +49,7 @@ def call(Map params = [:], Closure body) {
             "--network-alias moodle " +
             "-e HOME=\$WORKSPACE/.home"
         ) {
-            sh 'curl -sS https://getcomposer.org/installer | php -- --install-dir="$WORKSPACE/bin" --filename=composer'
+            sh 'mkdir -p "$WORKSPACE/bin" && curl -sS https://getcomposer.org/installer | php -- --install-dir="$WORKSPACE/bin" --filename=composer'
             sh '"$WORKSPACE/bin/composer" --version'
 
             sh '''
