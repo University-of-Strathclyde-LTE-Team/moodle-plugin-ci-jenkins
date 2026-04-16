@@ -2,13 +2,13 @@
 // branch's Jenkins workspace directory, and running two builds simultaneously would
 // cause them to interfere. Disable concurrent builds in the job configuration.
 def call(Map params = [:], Closure body) {
-    def phpVersion       = params.php ?: '8.3'
-    def db               = params.db ?: 'mysql'
-    def ciVersion        = params.ciVersion ?: '4'
-    def withBehatServers = params.withBehatServers
+    def phpVersion = params.php ?: '8.3'
+    def db         = params.db ?: 'mysql'
+    def ciVersion  = params.ciVersion ?: '4'
+    def browser    = params.browser
 
-    if (withBehatServers && !(withBehatServers in ['chrome', 'firefox'])) {
-        error("withBehatServers must be 'chrome' or 'firefox'")
+    if (browser && !(browser in ['chrome', 'firefox'])) {
+        error("browser must be 'chrome' or 'firefox'")
     }
 
     def dbType
@@ -30,14 +30,14 @@ def call(Map params = [:], Closure body) {
 
         startDatabase(db, dbContainer, network)
 
-        if (withBehatServers) {
+        if (browser) {
             sh """
                 docker run -d \
                     --name '${seleniumContainer}' \
                     --network '${network}' \
                     --network-alias selenium \
                     --shm-size=2g \
-                    selenium/standalone-${withBehatServers}:latest
+                    selenium/standalone-${browser}:latest
             """
         }
 
@@ -100,11 +100,11 @@ def call(Map params = [:], Closure body) {
                 "MOODLE_START_BEHAT_SERVERS=false",
             ]
 
-            if (withBehatServers) {
+            if (browser) {
                 envVars += [
                     "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub",
                     "MOODLE_BEHAT_WWWROOT=http://moodle:8000",
-                    "MOODLE_BEHAT_DEFAULT_BROWSER=${withBehatServers}",
+                    "MOODLE_BEHAT_DEFAULT_BROWSER=${browser}",
                 ]
             }
 
@@ -115,7 +115,7 @@ def call(Map params = [:], Closure body) {
     } finally {
         sh "docker stop '${dbContainer}' || true"
         sh "docker rm -v '${dbContainer}' || true"
-        if (withBehatServers) {
+        if (browser) {
             sh "docker stop '${seleniumContainer}' || true"
             sh "docker rm -v '${seleniumContainer}' || true"
         }
