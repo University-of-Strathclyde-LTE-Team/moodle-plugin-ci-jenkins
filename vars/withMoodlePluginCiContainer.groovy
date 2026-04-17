@@ -203,16 +203,21 @@ private void startDatabase(String db, String containerName, String network,
                     --name '${containerName}' \
                     --network '${network}' \
                     --network-alias db \
-                    -e POSTGRES_USER=moodle \
                     -e POSTGRES_PASSWORD=moodle \
                     --tmpfs /var/lib/postgresql/data:rw,noexec,nosuid \
                     postgres:${postgresVersion}
             """
+            // moodle-plugin-ci creates the database itself, so we start PostgreSQL with
+            // the default postgres superuser and create the moodle role separately —
+            // same approach as MySQL. Using POSTGRES_USER=moodle would auto-create a
+            // moodle database, causing moodle-plugin-ci's CREATE DATABASE to fail.
             // Same polling approach as MySQL — see comment above.
             sh """
                 ready=0
                 for i in \$(seq 1 30); do
-                    if docker exec '${containerName}' pg_isready -U moodle >/dev/null 2>&1; then
+                    if docker exec '${containerName}' pg_isready -U postgres >/dev/null 2>&1; then
+                        docker exec --user postgres '${containerName}' psql \
+                            -c "CREATE USER moodle WITH PASSWORD 'moodle' SUPERUSER;"
                         echo 'PostgreSQL ready.'
                         ready=1
                         break
