@@ -39,18 +39,27 @@ This starts up a docker container with a suitable environment for running moodle
 
 ### Parameters
 
-* **php**: a PHP version, e.g. 7.4
-* **db**: mysql or postgres
-* **withBehatServers**: chrome or firefox. This will start the relevant selenium container and the PHP
-  built-in web server to allow the behat command to be run.
-* **ciVersion** the version of moodle-plugin-ci to use
-  
-The step also expects a code block which will be run inside the container
+* **php**: a PHP version, e.g. `'8.3'` (default: `'8.3'`)
+* **db**: `mysql` or `postgres` (default: `mysql`)
+* **ciVersion**: a Composer version constraint for moodle-plugin-ci, e.g. `'^4'`, `'^5'`, `'dev-main'` (default: `'^4'`)
+* **browser**: `chrome` or `firefox`. Starts the relevant Selenium container and PHP built-in web server. **Required if you intend to run `moodlePluginCi 'behat'`**; omit for builds that do not run Behat.
+* **seleniumVersion**: the Selenium image tag to use (default: `'4'`)
+* **mysqlVersion**: the MySQL image tag to use when `db` is `mysql` (default: `'8.4'`)
+* **postgresVersion**: the PostgreSQL image tag to use when `db` is `postgres` (default: `'16'`)
+
+The step also expects a code block which will be run inside the container.
 
 ### Example
 
-    withMoodlePluginCiContainer(php: 7.4, db: postgres) {
+    withMoodlePluginCiContainer(php: '8.3', db: 'postgres') {
         sh 'moodle-plugin-ci --help'
+    }
+
+### Behat example
+
+    withMoodlePluginCiContainer(php: '8.3', db: 'mysql', browser: 'chrome') {
+        moodlePluginCiInstall('--branch MOODLE_405_STABLE --plugin plugin')
+        moodlePluginCi 'behat'
     }
 
 The other two steps are intended to be run inside the container step.
