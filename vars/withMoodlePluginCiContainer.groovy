@@ -51,7 +51,24 @@ def call(Map params = [:], Closure body) {
 
         sh 'mkdir -p "$WORKSPACE/.home"'
 
-        docker.image("moodlehq/moodle-php-apache:${phpVersion}").inside(
+        // WORKAROUND: moodlehq/moodle-php-apache does not include the PostgreSQL client
+        // binary, which moodle-plugin-ci requires for postgres builds. We extend the image
+        // on the fly to add it. docker.image().inside() runs as the Jenkins uid so we cannot
+        // apt-get inside the container — the build must happen here, before inside() is called.
+        // Remove this block (and revert phpImage references below back to the original image
+        // string) once moodlehq/moodle-php-apache#209 is merged and released.
+        def phpImage = "moodlehq/moodle-php-apache:${phpVersion}"
+        if (db == 'postgres') {
+            sh """
+                docker build -t 'moodle-ci-psql:${phpVersion}' - <<'DOCKERFILE'
+FROM ${phpImage}
+RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
+DOCKERFILE
+            """
+            phpImage = "moodle-ci-psql:${phpVersion}"
+        }
+
+        docker.image(phpImage).inside(
             "--entrypoint '' " +
             "--network '${network}' " +
             '--network-alias moodle ' +
