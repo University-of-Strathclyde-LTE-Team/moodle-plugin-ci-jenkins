@@ -78,6 +78,7 @@ def call(Map params = [:], Closure body) {
 
             sh """
                 export NVM_DIR="\$WORKSPACE/.nvm"
+                export COMPOSER_CACHE_DIR="\$WORKSPACE/.cache/composer"
                 set +x
                 . "\$NVM_DIR/nvm.sh"
                 set -x
@@ -99,6 +100,10 @@ def call(Map params = [:], Closure body) {
                 // NVM_DIR must be set so moodle-plugin-ci's VendorInstaller can find NVM,
                 // read Moodle's .nvmrc, and install the correct Node version.
                 "NVM_DIR=${env.WORKSPACE}/.nvm",
+                // Cache directories inside the workspace so they persist between builds.
+                // Excluded from cleanWs() below so they survive workspace cleanup.
+                "COMPOSER_CACHE_DIR=${env.WORKSPACE}/.cache/composer",
+                "npm_config_cache=${env.WORKSPACE}/.cache/npm",
                 "DB=${dbType}",
                 "MOODLE_CI_DB_HOST=db",
                 "MOODLE_CI_DB_USER=moodle",
@@ -127,7 +132,9 @@ def call(Map params = [:], Closure body) {
             sh "docker rm -v '${seleniumContainer}' || true"
         }
         sh "docker network rm '${network}' || true"
-        cleanWs()
+        cleanWs(patterns: [
+            [pattern: '.cache/**', type: 'EXCLUDE'],
+        ])
     }
 }
 
