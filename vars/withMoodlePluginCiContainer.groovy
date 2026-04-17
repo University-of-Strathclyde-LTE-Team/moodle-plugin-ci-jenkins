@@ -123,8 +123,8 @@ DOCKERFILE
                 // NVM_DIR must be set so moodle-plugin-ci's VendorInstaller can find NVM,
                 // read Moodle's .nvmrc, and install the correct Node version.
                 "NVM_DIR=${env.WORKSPACE}/.nvm",
-                // Cache directories inside the workspace so they persist between builds.
-                // Excluded from cleanWs() below so they survive workspace cleanup.
+                // Cache directories inside the workspace. Pipelines should exclude .cache/**
+                // from their cleanWs() call to retain packages between builds — see README.
                 "COMPOSER_CACHE_DIR=${env.WORKSPACE}/.cache/composer",
                 "npm_config_cache=${env.WORKSPACE}/.cache/npm",
                 "DB=${dbType}",
@@ -155,9 +155,6 @@ DOCKERFILE
             sh "docker rm -v '${seleniumContainer}' || true"
         }
         sh "docker network rm '${network}' || true"
-        cleanWs(patterns: [
-            [pattern: '.cache/**', type: 'EXCLUDE'],
-        ])
     }
 }
 

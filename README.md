@@ -144,10 +144,20 @@ For example:
 
 # Workspace
 
-Please note that withMoodlePluginCiContainer runs in the root of the workspace
-**and cleans it up after running**. If this is not acceptable please consider running it in
-a custom workspace for the job. However, npm and composer packages are cached at the workspace
-level (and are not cleaned up) in order to prevent re-downloading all dependencies for each run.
+`withMoodlePluginCiContainer` does not clean up the workspace. Pipelines are responsible
+for their own cleanup, typically in a `post { cleanup { ... } }` block.
+
+The step caches Composer and npm packages under `.cache/` in the workspace. To retain
+these between builds and avoid re-downloading dependencies on every run, exclude this
+directory from cleanup:
+
+    post {
+        cleanup {
+            cleanWs(patterns: [[pattern: '.cache/**', type: 'EXCLUDE']])
+        }
+    }
+
+If you omit this exclusion, packages will be re-downloaded on every build.
 
 # Contributing
 
