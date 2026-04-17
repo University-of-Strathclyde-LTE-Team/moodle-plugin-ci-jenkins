@@ -60,9 +60,9 @@ def call(Map params = [:], Closure body) {
             sh 'mkdir -p "$WORKSPACE/bin" && curl -fsS https://getcomposer.org/installer | php -- --install-dir="$WORKSPACE/bin" --filename=composer'
             sh '"$WORKSPACE/bin/composer" --version'
 
-            sh '''
-                mkdir -p "$WORKSPACE/.nvm"
-                export NVM_DIR="$WORKSPACE/.nvm"
+            sh """
+                mkdir -p "\$WORKSPACE/.nvm"
+                export NVM_DIR="\$WORKSPACE/.nvm"
                 # PROFILE=/dev/null prevents the installer appending nvm bootstrap lines to
                 # any shell rc file — we source nvm.sh manually each time instead.
                 # The variable must be set on bash (which runs the install script), not on
@@ -71,10 +71,10 @@ def call(Map params = [:], Closure body) {
                 # set +x suppresses noisy shell-function traces from both nvm.sh and
                 # nvm install — NVM is heavily function-based so set -x floods the log.
                 set +x
-                . "$NVM_DIR/nvm.sh"
+                . "\$NVM_DIR/nvm.sh"
                 nvm install --lts
                 set -x
-            '''
+            """
 
             sh """
                 export NVM_DIR="\$WORKSPACE/.nvm"
