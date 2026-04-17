@@ -1,8 +1,6 @@
 This is a shared library for [Jenkins](https://www.jenkins.io/) for running 
 [moodle-plugin-ci](https://github.com/moodlehq/moodle-plugin-ci)
 
-It is currently a work in progress and contributions are very welcome!
-
 # Feature support
 
 ## Supported
@@ -75,15 +73,15 @@ This runs the moodle-plugin-ci install command inside the container.
 
 ### Examples
 
-    withMoodlePluginCiContainer(php: 7.4, db: postgres) {
-        moodlePluginCiInstall('--branch MOODLE_310_STABLE --plugin plugin')
+    withMoodlePluginCiContainer(php: '8.3', db: 'postgres') {
+        moodlePluginCiInstall('--branch MOODLE_405_STABLE --plugin plugin')
     }
 
 Using a custom Moodle repo
 
-    withMoodlePluginCiContainer(php: 7.4, db: postgres) {
+    withMoodlePluginCiContainer(php: '8.3', db: 'postgres') {
         ssh-agent(['bitbucket-credentials']) {
-             moodlePluginCiInstall('--branch MOODLE_310_STABLE --plugin plugin --repo ssh://git@bitbucket.example.com/moodle.git')
+             moodlePluginCiInstall('--branch MOODLE_405_STABLE --plugin plugin --repo ssh://git@bitbucket.example.com/moodle.git')
         }
     }
 
@@ -93,7 +91,7 @@ This is a wrapper step for moodle-plugin-ci which simplifies setting the stage a
 fails. For example, you may wish to run codechecker without failing your build if issues are found, but to mark
 the build as unstable.
 
-## Parameters
+### Parameters
 
 * **command**: the moodle-plugin-ci command to be run, along with any parameters
 * **stageResult (optional)**: the stage result if the command fails (default SUCCESS)
@@ -123,9 +121,9 @@ For example:
 
                 steps {
 
-                    withMoodlePluginCiContainer(php: '7.4', ciVersion: '4') {
+                    withMoodlePluginCiContainer(php: '8.3') {
 
-                        moodlePluginCiInstall("--branch MOODLE_310_STABLE --plugin plugin")
+                        moodlePluginCiInstall('--branch MOODLE_405_STABLE --plugin plugin')
 
                         moodlePluginCi 'phplint'
                         moodlePluginCi 'phpcpd', 'SUCCESS', 'SUCCESS'
