@@ -1,22 +1,22 @@
 def call(String command = '') {
-
     def db = env.DB
     if (!db) {
-        error("DB environment variable must be set. Are you running moodlePluginCiInstall outside of the container?")
+        error('DB environment variable must be set. Are you running moodlePluginCiInstall outside of the container?')
     }
 
     // The DB env variable can probably be used directly by moodle-plugin-ci, but this lets us check the user hasn't
     // tried to pass it more easily.
     def installParams = [
-        "db-type": db,
-        "db-host": env.MOODLE_CI_DB_HOST ?: 'localhost',
-        "db-user": env.MOODLE_CI_DB_USER ?: 'moodle',
-        "db-pass": env.MOODLE_CI_DB_PASS ?: 'moodle',
+        'db-type': db,
+        'db-host': env.MOODLE_CI_DB_HOST ?: 'localhost',
+        'db-user': env.MOODLE_CI_DB_USER ?: 'moodle',
+        'db-pass': env.MOODLE_CI_DB_PASS ?: 'moodle',
     ]
 
-    def forbidden = installParams.keySet().findAll { command.contains('--' + it) }
+    def forbidden = installParams.keySet().findAll { key -> command.contains('--' + key) }
     if (forbidden) {
-        error("The following parameters are managed automatically and cannot be passed: ${forbidden.collect { '--' + it }.join(', ')}")
+        def paramList = forbidden.collect { key -> '--' + key }.join(', ')
+        error("The following parameters are managed automatically and cannot be passed: ${paramList}")
     }
 
     def installCommand = ["\$WORKSPACE/ci/bin/moodle-plugin-ci install"]
@@ -43,5 +43,4 @@ def call(String command = '') {
             fi
         '''
     }
-
 }

@@ -7,9 +7,9 @@ def call(command, stageResult = null, buildResult = null) {
         sh shCommand
     } else {
         // Default to the standard catchError defaults.
-        stageResult = stageResult ?: 'SUCCESS'
-        buildResult = buildResult ?: 'FAILURE'
-        catchError (stageResult: stageResult, buildResult: buildResult) {
+        def effectiveStageResult = stageResult ?: 'SUCCESS'
+        def effectiveBuildResult = buildResult ?: 'FAILURE'
+        catchError(stageResult: effectiveStageResult, buildResult: effectiveBuildResult) {
             sh shCommand
         }
     }

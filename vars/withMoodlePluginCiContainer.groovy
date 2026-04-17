@@ -54,10 +54,14 @@ def call(Map params = [:], Closure body) {
         docker.image("moodlehq/moodle-php-apache:${phpVersion}").inside(
             "--entrypoint '' " +
             "--network '${network}' " +
-            "--network-alias moodle " +
+            '--network-alias moodle ' +
             "-e HOME=\$WORKSPACE/.home"
         ) {
-            sh 'mkdir -p "$WORKSPACE/bin" && curl -fsS https://getcomposer.org/installer | php -- --install-dir="$WORKSPACE/bin" --filename=composer'
+            sh '''
+                mkdir -p "$WORKSPACE/bin"
+                curl -fsS https://getcomposer.org/installer \
+                    | php -- --install-dir="$WORKSPACE/bin" --filename=composer
+            '''
             sh '"$WORKSPACE/bin/composer" --version'
 
             sh """
@@ -67,7 +71,8 @@ def call(Map params = [:], Closure body) {
                 # any shell rc file — we source nvm.sh manually each time instead.
                 # The variable must be set on bash (which runs the install script), not on
                 # curl, hence the placement after the pipe.
-                curl -fsSo- https://raw.githubusercontent.com/nvm-sh/nvm/${nvmVersion}/install.sh | PROFILE=/dev/null bash
+                nvm_url="https://raw.githubusercontent.com/nvm-sh/nvm/${nvmVersion}/install.sh"
+                curl -fsSo- "\$nvm_url" | PROFILE=/dev/null bash
                 # set +x suppresses noisy shell-function traces from both nvm.sh and
                 # nvm install — NVM is heavily function-based so set -x floods the log.
                 set +x
@@ -84,7 +89,8 @@ def call(Map params = [:], Closure body) {
                 set -x
                 # Remove any previous installation so composer create-project starts clean.
                 rm -rf "\$WORKSPACE/ci"
-                "\$WORKSPACE/bin/composer" create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ${ciVersion}
+                "\$WORKSPACE/bin/composer" create-project -n --no-dev --prefer-dist \
+                    moodlehq/moodle-plugin-ci ci ${ciVersion}
             """
 
             // Node version management is handled entirely by moodle-plugin-ci via NVM:
@@ -105,17 +111,17 @@ def call(Map params = [:], Closure body) {
                 "COMPOSER_CACHE_DIR=${env.WORKSPACE}/.cache/composer",
                 "npm_config_cache=${env.WORKSPACE}/.cache/npm",
                 "DB=${dbType}",
-                "MOODLE_CI_DB_HOST=db",
-                "MOODLE_CI_DB_USER=moodle",
-                "MOODLE_CI_DB_PASS=moodle",
+                'MOODLE_CI_DB_HOST=db',
+                'MOODLE_CI_DB_USER=moodle',
+                'MOODLE_CI_DB_PASS=moodle',
                 // Prevent moodle-plugin-ci from attempting to start its own servers.
-                "MOODLE_START_BEHAT_SERVERS=false",
+                'MOODLE_START_BEHAT_SERVERS=false',
             ]
 
             if (browser) {
                 envVars += [
-                    "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub",
-                    "MOODLE_BEHAT_WWWROOT=http://moodle:8000",
+                    'MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub',
+                    'MOODLE_BEHAT_WWWROOT=http://moodle:8000',
                     "MOODLE_BEHAT_DEFAULT_BROWSER=${browser}",
                 ]
             }
@@ -138,7 +144,8 @@ def call(Map params = [:], Closure body) {
     }
 }
 
-private void startDatabase(String db, String containerName, String network, String mysqlVersion, String postgresVersion) {
+private void startDatabase(String db, String containerName, String network,
+        String mysqlVersion, String postgresVersion) {
     switch (db) {
         case 'mysql':
             sh """
@@ -160,7 +167,9 @@ private void startDatabase(String db, String containerName, String network, Stri
                 for i in \$(seq 1 30); do
                     if docker exec '${containerName}' mysql -uroot -pmoodle -e 'SELECT 1' >/dev/null 2>&1; then
                         docker exec '${containerName}' mysql -uroot -pmoodle \
-                            -e "CREATE USER 'moodle'@'%' IDENTIFIED BY 'moodle'; GRANT ALL ON *.* TO 'moodle'@'%'; FLUSH PRIVILEGES;"
+                            -e "CREATE USER 'moodle'@'%' IDENTIFIED BY 'moodle';"
+                        docker exec '${containerName}' mysql -uroot -pmoodle \
+                            -e "GRANT ALL ON *.* TO 'moodle'@'%'; FLUSH PRIVILEGES;"
                         echo 'MySQL ready.'
                         ready=1
                         break
