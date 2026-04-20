@@ -17,6 +17,8 @@ This is a shared library for [Jenkins](https://www.jenkins.io/) for running
 
 Docker must be available on the Jenkins server.
 
+Concurrent builds of the same job are supported, but each build will have its own workspace and therefore its own cache. If you want Composer and npm packages to be cached across builds, disable concurrent builds in the job configuration or via `disableConcurrentBuilds()` in the pipeline's `options` block.
+
 The following Jenkins plugins must also be installed:
 
 * [Pipeline: Shared Groovy Libraries](https://plugins.jenkins.io/workflow-cps-global-lib/)

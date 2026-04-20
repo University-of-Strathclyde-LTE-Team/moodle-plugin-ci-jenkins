@@ -1,6 +1,6 @@
-// NOTE: concurrent builds of the same branch are not supported. Each build uses the
-// branch's Jenkins workspace directory, and running two builds simultaneously would
-// cause them to interfere. Disable concurrent builds in the job configuration.
+// NOTE: concurrent builds of the same job are supported, but each will have its own
+// workspace and therefore its own Composer/npm cache. Disable concurrent builds if
+// you want packages to be cached across builds.
 
 def call(Map params = [:], Closure body) {
     // Update this when a new NVM release is available: https://github.com/nvm-sh/nvm/releases
