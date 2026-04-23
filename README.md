@@ -44,6 +44,9 @@ This starts up a docker container with a suitable environment for running moodle
 * **withBehatServers**: chrome or firefox. This will start the relevant selenium container and the PHP
   built-in web server to allow the behat command to be run.
 * **ciVersion** the version of moodle-plugin-ci to use
+* **clean** boolean that will flag if we should clean the entire workspace after this step (default: true)
+  If you do not clean the workspace you should call moodlePluginCleanWorkspace() manually later.
+* **tag** a string that will help uniquely identify the build image if this step is being run n parallel (optional)
   
 The step also expects a code block which will be run inside the container
 
@@ -98,6 +101,8 @@ For example:
 
 # Full pipeline example
 
+## Single combination test
+
     pipeline {
         agent any
 
@@ -134,6 +139,147 @@ For example:
         }
     }
 
+## Multiple combination test
+
+If you wish to run multiple combinations of tests you must disable cleaning of the workspace in individual
+withMoodlePluginCiContainer container steps, they also require that you define a unique tag for each of them.
+
+This requires that you then add a post step to clean the workspace.
+
+    pipeline {
+        agent any
+
+        options {
+            checkoutToSubdirectory('plugin')
+            disableConcurrentBuilds()
+        }
+
+        stages {
+            stage("Plugin CI") {
+
+                agent any
+
+                steps {
+                    withMoodlePluginCiContainer(php: '7.4', tag: 'm311-php74', clean: false) {
+                        moodlePluginCiInstall("--branch MOODLE_311_STABLE --plugin plugin")
+
+                        moodlePluginCi 'phplint'
+                        moodlePluginCi 'phpcpd', 'UNSTABLE', 'UNSTABLE'
+                        moodlePluginCi 'phpmd', 'UNSTABLE', 'UNSTABLE'
+                        moodlePluginCi 'codechecker --max-warnings 0', 'UNSTABLE', 'UNSTABLE'
+                        moodlePluginCi 'phpdoc', 'UNSTABLE', 'UNSTABLE'
+                        moodlePluginCi 'validate', 'UNSTABLE', 'UNSTABLE'
+                        moodlePluginCi 'savepoints', 'UNSTABLE', 'UNSTABLE'
+                        moodlePluginCi 'mustache', 'UNSTABLE', 'UNSTABLE'
+                        moodlePluginCi 'grunt --max-lint-warnings 0', 'UNSTABLE', 'UNSTABLE'
+                        moodlePluginCi 'phpunit'
+                    }
+                    withMoodlePluginCiContainer(php: '8.1', tag: 'm401-php81', clean: false) {
+                        moodlePluginCiInstall("--branch MOODLE_401_STABLE --plugin plugin")
+
+                        moodlePluginCi 'phpunit'
+                    }
+                }
+            }
+        }
+
+        post {
+            always {
+                moodlePluginCleanWorkspace()
+            }
+        }
+    }
+
+## Matrix combination example
+
+If you want to make many combinations of environment be tested you can also use a matrix, each combination
+will run in parallel.
+
+It is important that in this setup that you ensure that each tag will be unique, to prevent multiple docker
+images from having the same identifier. You should also ensure that you allow the workspace to be cleaned up.
+
+    pipeline {
+    agent any
+    
+        options {
+            checkoutToSubdirectory('plugin')
+        }
+    
+        stages {
+            stage("Plugin CI") {
+                matrix {
+                    axes {
+                        axis {
+                            name 'MOODLE'
+                            values 'MOODLE_311_STABLE', 'MOODLE_401_STABLE'
+                        }
+                        axis {
+                            name 'PHP'
+                            values '7.4', '8.1'
+                        }
+                        axis {
+                            name 'DATABASE'
+                            values 'mysql'
+                        }
+                    }
+    
+                    excludes {
+                        exclude {
+                            axis {
+                                name 'MOODLE'
+                                notValues 'MOODLE_401_STABLE'
+                            }
+                            axis {
+                                name 'PHP'
+                                values '8.1'
+                            }
+                        }
+                        exclude {
+                            axis {
+                                name 'MOODLE'
+                                notValues 'MOODLE_311_STABLE'
+                            }
+                            axis {
+                                name 'PHP'
+                                values '7.4'
+                            }
+                        }
+                    }
+                    stages {
+                        stage ('Tests') {
+                            agent {
+                                node{
+                                    label any
+                                }
+                            }
+                            steps {
+                                withMoodlePluginCiContainer(
+                                    php: "${PHP}",
+                                    db: "${DATABASE}",
+                                    ciVersion: '4',
+                                    tag: "${MOODLE}-${PHP}-${DATABASE}"
+                                ) {
+                                    moodlePluginCiInstall("--branch ${MOODLE} --plugin ./plugin")
+    
+                                    moodlePluginCi 'phplint'
+                                    moodlePluginCi 'phpcpd', 'UNSTABLE', 'UNSTABLE'
+                                    moodlePluginCi 'phpmd', 'UNSTABLE', 'UNSTABLE'
+                                    moodlePluginCi 'codechecker --max-warnings 0', 'UNSTABLE', 'UNSTABLE'
+                                    moodlePluginCi 'phpdoc', 'UNSTABLE', 'UNSTABLE'
+                                    moodlePluginCi 'validate', 'UNSTABLE', 'UNSTABLE'
+                                    moodlePluginCi 'savepoints', 'UNSTABLE', 'UNSTABLE'
+                                    moodlePluginCi 'mustache', 'UNSTABLE', 'UNSTABLE'
+                                    moodlePluginCi 'grunt --max-lint-warnings 0', 'UNSTABLE', 'UNSTABLE'
+    
+                                    moodlePluginCi 'phpunit'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
 # Workspace
 

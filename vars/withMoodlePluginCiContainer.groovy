@@ -1,14 +1,17 @@
 def call(Map pipelineParams = [:], Closure body) {
 
-    def buildTag = buildTag()
+    def tag = pipelineParams.tag ?: ''
+
+    def buildTag = buildTag(tag)
 
     try {
         runContainers(pipelineParams, body)
     } finally {
-        cleanWs deleteDirs: true, notFailBuild: true, patterns: [
-            [pattern: ".composer/**", type: 'EXCLUDE'],
-            [pattern: ".npm/**", type: 'EXCLUDE']
-        ]
+        if (pipelineParams.clean != false) {
+            // We want the workspace to clean unless it has been explicitly told not to.
+            // If it is unset the value will be null, and therefor not evaluate to false.
+            moodlePluginCleanWorkspace()
+        }
 
         // Use "|| true" to prevent cleanup failing job.
         if (pipelineParams.withBehatServers) {
@@ -22,13 +25,16 @@ def call(Map pipelineParams = [:], Closure body) {
 
 }
 
-private def buildTag() {
+private def buildTag(String tag) {
         // Docker does not like upper case letters in tags.
         def buildTag = "${BUILD_TAG}".toLowerCase()
 
         // The BUILD_TAG documentation says slashes are replaced by dashes but this seems to be wrong (in Jenkins 2.263.4)
         buildTag = buildTag.replace('%2f', '-')
-        return buildTag
+        if (tag != '') {
+            buildTag = buildTag + '-' + tag
+        }
+        return buildTag.toLowerCase()
 }
 
 private def runContainers(Map pipelineParams = [:], Closure body) {
@@ -37,6 +43,8 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
     def db = pipelineParams.db ?: 'mysql'
     def ciVersion = pipelineParams.ciVersion ?: '3';
     def withBehatServers = pipelineParams.withBehatServers
+    def tag = pipelineParams.tag ?: ''
+    def path = tag ? "${tag}/" : ''
 
     if (withBehatServers) {
         if (!(withBehatServers in ['chrome', 'firefox'])) {
@@ -60,7 +68,7 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
     def dockerFileContents = libraryResource 'uk/ac/strath/myplace/Dockerfile'
     def phpIniFileContents = libraryResource 'uk/ac/strath/myplace/php/php-config.ini'
 
-    def buildTag = buildTag()
+    def buildTag = buildTag(tag)
 
     // Create Dockerfile in its own directory to prevent unnecessary context being sent.
     def dockerDir = "${buildTag}-docker"
@@ -91,7 +99,7 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
     // (or any other method as far as I can see)
     // https://issues.jenkins.io/browse/JENKINS-49076
     def originalDockerPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-    def pathOnDocker = "${WORKSPACE}/ci/bin:${originalDockerPath}"
+    def pathOnDocker = "${WORKSPACE}/${path}ci/bin:${originalDockerPath}"
 
     image.inside("-e PATH=${pathOnDocker} --network ${buildTag} --network-alias=moodle") {
 
@@ -119,17 +127,17 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
 
         withEnv(installEnv) {
             sh ". \$NVM_DIR/nvm.sh >/dev/null && nvm use default && \
-                composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^${ciVersion}"
+                composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ${path}ci ^${ciVersion}"
         }
 
         // Preload env file with variables to work around withEnv not apparently being picked up by symfony.
         // This shouldn't be necessary so we should get rid of it once we understand the problem.
-        def envFile = "$WORKSPACE/ci/.env"
+        def envFile = "${WORKSPACE}/${path}ci/.env"
         def envContent = "MOODLE_BEHAT_WDHOST=http://selenium:4444/wd/hub\n"
         envContent << "MOODLE_BEHAT_WWWROOT=http://moodle:8000"
 
         if (withBehatServers) {
-            sh "php -S 0.0.0.0:8000 -t ${WORKSPACE}/moodle &"
+            sh "php -S 0.0.0.0:8000 -t ${WORKSPACE}/${path}moodle &"
         }
 
         // Workaround for the withEnv below not appearing to work.
@@ -140,8 +148,10 @@ private def runContainers(Map pipelineParams = [:], Closure body) {
 
         // The script has a flag to prevent the servers starting but appears to override it with an environment
         // variable if the plugin has behat tests (in TestSuiteInstaller::getBehatInstallProcesses())
-        withEnv(["DB=${installDb}", "MOODLE_START_BEHAT_SERVERS=false"]) {
-            body()
+        withEnv(["DB=${installDb}", "MOODLE_START_BEHAT_SERVERS=false", "TAG=${tag}"]) {
+            dir(tag) {
+                body()
+            }
         }
 
     }
